@@ -1,0 +1,22 @@
+--- origsrc/kdebase-workspace-4.2.0/kcontrol/kxkb/x11helper.cpp	2008-12-21 14:19:16.000000000 -0600
++++ src/kdebase-workspace-4.2.0/kcontrol/kxkb/x11helper.cpp	2009-01-29 19:13:47.877363500 -0600
+@@ -373,10 +373,6 @@ X11Helper::getGroupNames(Display* dpy)
+ 
+ int X11Helper::m_xinputEventType = -1;
+ 
+-extern "C" {
+-    extern int _XiGetDevicePresenceNotifyEvent(Display *);
+-}
+-
+ int
+ X11Helper::isNewDeviceEvent(XEvent* event)
+ {
+@@ -404,7 +400,7 @@ X11Helper::isNewDeviceEvent(XEvent* even
+     return false;
+ }
+ 
+-int
++extern "C" int
+ X11Helper::registerForNewDeviceEvent(Display* display)
+ {
+     int xitype;

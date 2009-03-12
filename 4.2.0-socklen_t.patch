@@ -1,0 +1,11 @@
+--- origsrc/kdebase-workspace-4.2.0/kcontrol/kfontinst/kio/Server.cpp	2008-01-04 17:55:13.000000000 -0600
++++ src/kdebase-workspace-4.2.0/kcontrol/kfontinst/kio/Server.cpp	2009-01-29 18:19:23.736738500 -0600
+@@ -51,7 +51,7 @@
+                  + strlen ((ptr)->sun_path))
+ #endif
+ 
+-typedef unsigned ksocklen_t;
++typedef socklen_t ksocklen_t;
+ 
+ namespace KFI
+ {
