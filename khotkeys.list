@@ -1,0 +1,8 @@
+usr/bin/cygkhotkeysprivate-4.dll
+usr/lib/kde4/kcm_hotkeys.dll
+usr/lib/kde4/kded_khotkeys.dll
+usr/share/dbus-1/interfaces/org.kde.khotkeys.xml
+usr/share/kde4/apps/khotkeys/
+usr/share/kde4/services/kded/khotkeys.desktop
+usr/share/kde4/services/khotkeys.desktop
+usr/share/doc/khotkeys/

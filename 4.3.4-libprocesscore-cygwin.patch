@@ -1,0 +1,41 @@
+--- origsrc/kdebase-workspace-4.3.4/libs/ksysguard/processcore/processes_linux_p.cpp	2009-07-21 10:18:53.000000000 -0500
++++ src/kdebase-workspace-4.3.4/libs/ksysguard/processcore/processes_linux_p.cpp	2010-01-15 02:15:06.385668400 -0600
+@@ -38,9 +38,11 @@
+ #include <sys/resource.h>
+ #include <dirent.h>
+ #include <stdlib.h>
++#ifndef Q_OS_CYGWIN
+ //for ionice
+ #include <sys/ptrace.h>
+ #include <asm/unistd.h>
++#endif
+ //for getsched
+ #include <sched.h>
+ 
+@@ -50,6 +52,7 @@
+ extern int sys_ioprio_set(int, int, int);
+ extern int sys_ioprio_get(int, int);
+ 
++#ifndef Q_OS_CYGWIN
+ #define HAVE_IONICE
+ /* Check if this system has ionice */
+ #if !defined(SYS_ioprio_get) || !defined(SYS_ioprio_set)
+@@ -77,6 +80,7 @@ extern int sys_ioprio_get(int, int);
+ #define SYS_ioprio_set                __NR_ioprio_set
+ 
+ #endif /* !SYS_ioprio_get */
++#endif /* !Q_OS_CYGWIN */
+ 
+ /* Set up ionice functions */
+ #ifdef HAVE_IONICE
+--- origsrc/kdebase-workspace-4.3.4/libs/ksysguard/processcore/processes_local_p.cpp	2009-08-27 03:17:42.000000000 -0500
++++ src/kdebase-workspace-4.3.4/libs/ksysguard/processcore/processes_local_p.cpp	2010-01-15 01:25:06.237069700 -0600
+@@ -19,7 +19,7 @@
+ 
+ */
+ 
+-#if defined __linux__
++#if defined __linux__ || defined __CYGWIN__
+ #include "processes_linux_p.cpp"
+ #elif defined __FreeBSD__ || defined __FreeBSD_kernel__ || defined __DragonFly__
+ #include "processes_freebsd_p.cpp"

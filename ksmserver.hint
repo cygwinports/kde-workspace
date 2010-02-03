@@ -1,0 +1,5 @@
+category: KDE
+requires: libgcc1 libICE6 libkdecore5 libkworkspace4 libplasma3 libqimageblitz4 libQtCore4 libQtDBus4 libQtGui4 libSM6 libstdc++6 libX11_6 libXrender1
+external-source: kdebase-workspace
+sdesc: "KDE desktop session manager"
+ldesc: "KDE base desktop packages"

@@ -1,7 +1,0 @@
-inherit kde4
-
-PATCH_URI="4.2.0-gcc34.patch
-           4.2.0-ksysguard.patch
-           4.2.0-socklen_t.patch"
-
-DO_NOT_COMPILE="ksysguard powerdevil"

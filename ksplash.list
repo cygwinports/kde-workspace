@@ -1,0 +1,7 @@
+usr/bin/ksplash*
+usr/lib/kde4/kcm_ksplashthemes.dll
+usr/share/icons/hicolor/*/apps/ksplash.*
+usr/share/kde4/apps/ksplash/
+usr/share/kde4/config/ksplash.knsrc
+usr/share/kde4/services/ksplashthememgr.desktop
+usr/share/doc/ksplash/

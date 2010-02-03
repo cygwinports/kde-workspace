@@ -1,0 +1,11 @@
+usr/bin/cygsystemsettingsview.dll
+usr/bin/systemsettings.exe
+usr/include/kde4/systemsettingsview/
+usr/lib/kde4/classic_mode.dll
+usr/lib/kde4/icon_mode.dll
+usr/lib/kde4/lib/libsystemsettingsview.dll.a
+usr/share/applications/kde4/systemsettings.desktop
+usr/share/doc/HTML/en/systemsettings/
+usr/share/kde4/apps/systemsettings/
+usr/share/kde4/services/settings-*
+usr/share/kde4/servicetypes/systemsettings*.desktop

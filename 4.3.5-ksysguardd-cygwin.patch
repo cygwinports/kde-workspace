@@ -1,0 +1,3360 @@
+--- origsrc/kdebase-workspace-4.3.5/ksysguard/ksysguardd/CMakeLists.txt	2009-08-27 03:17:47.000000000 -0500
++++ src/kdebase-workspace-4.3.5/ksysguard/ksysguardd/CMakeLists.txt	2010-02-01 20:42:58.487776300 -0600
+@@ -21,19 +21,18 @@ configure_file(config-ksysguardd.h.cmake
+ if( ${CMAKE_SYSTEM_NAME} MATCHES "kFreeBSD" )
+     add_subdirectory( "FreeBSD" )
+     include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/FreeBSD )
+-else( ${CMAKE_SYSTEM_NAME} MATCHES "kFreeBSD" )
+-if( ${CMAKE_SYSTEM_NAME} MATCHES "DragonFly" )
++elseif( ${CMAKE_SYSTEM_NAME} MATCHES "DragonFly" )
+     add_subdirectory( "FreeBSD" )
+     include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/FreeBSD )
+-else( ${CMAKE_SYSTEM_NAME} MATCHES "DragonFly" )
+-    if( ${CMAKE_SYSTEM_NAME} MATCHES "SunOS" )
++elseif( ${CMAKE_SYSTEM_NAME} MATCHES "SunOS" )
+         add_subdirectory( "Solaris" )
+         include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/Solaris )
+-    else( ${CMAKE_SYSTEM_NAME} MATCHES "SunOS" )
++elseif( CYGWIN )
++    add_subdirectory( "Cygwin" )
++    include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/Cygwin )
++else( ${CMAKE_SYSTEM_NAME} MATCHES "kFreeBSD" )
+         add_subdirectory( ${CMAKE_SYSTEM_NAME} )
+         include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/${CMAKE_SYSTEM_NAME} )
+-    endif( ${CMAKE_SYSTEM_NAME} MATCHES "SunOS" )
+-endif( ${CMAKE_SYSTEM_NAME} MATCHES "DragonFly" )
+ endif( ${CMAKE_SYSTEM_NAME} MATCHES "kFreeBSD" )
+ 
+ ########### next target ###############
+--- origsrc/kdebase-workspace-4.3.5/ksysguard/ksysguardd/Cygwin/CMakeLists.txt	1969-12-31 18:00:00.000000000 -0600
++++ src/kdebase-workspace-4.3.5/ksysguard/ksysguardd/Cygwin/CMakeLists.txt	2010-02-01 20:15:06.866165000 -0600
+@@ -0,0 +1,14 @@
++INCLUDE_DIRECTORIES( ${CMAKE_CURRENT_SOURCE_DIR}/../CContLib ${CMAKE_CURRENT_BINARY_DIR}/.. ${CMAKE_CURRENT_SOURCE_DIR}/.. )
++
++SET(LIBKSYSGUARDD_FILES
++            cpuinfo.c
++            diskstat.c
++            loadavg.c
++            logfile.c
++            Memory.c
++            ProcessList.c
++            stat.c
++            uptime.c)
++
++KDE4_ADD_LIBRARY(libksysguardd STATIC 
++            ${LIBKSYSGUARDD_FILES})
+--- origsrc/kdebase-workspace-4.3.5/ksysguard/ksysguardd/Cygwin/Memory.c	1969-12-31 18:00:00.000000000 -0600
++++ src/kdebase-workspace-4.3.5/ksysguard/ksysguardd/Cygwin/Memory.c	2010-02-01 20:09:11.185821300 -0600
+@@ -0,0 +1,294 @@
++/*
++    KSysGuard, the KDE System Guard
++
++    Copyright (c) 1999 - 2001 Chris Schlaeger <cs@kde.org>
++
++    This program is free software; you can redistribute it and/or
++    modify it under the terms of version 2 of the GNU General Public
++    License as published by the Free Software Foundation.
++
++    This program is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++    GNU General Public License for more details.
++
++    You should have received a copy of the GNU General Public License
++    along with this program; if not, write to the Free Software
++    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
++
++*/
++
++#include <sys/types.h>
++#include <sys/stat.h>
++#include <fcntl.h>
++#include <unistd.h>
++#include <stdlib.h>
++#include <stdio.h>
++#include <string.h>
++
++#include "Command.h"
++#include "ksysguardd.h"
++
++#include "Memory.h"
++
++#define MEMINFOBUFSIZE (2 * 1024)
++
++static char MemInfoBuf[ MEMINFOBUFSIZE ];
++static int Dirty = 1;
++
++static unsigned long long Total = 0;
++static unsigned long long MFree = 0;
++static unsigned long long Appl = 0;
++static unsigned long long Used = 0;
++static unsigned long long Buffers = 0;
++static unsigned long long Cached = 0;
++static unsigned long long STotal = 0;
++static unsigned long long SFree = 0;
++static unsigned long long SUsed = 0;
++
++static void scan_one( const char* buff, const char *key, unsigned long long* val )
++{   
++  int o;
++  char *b = strstr( buff, key );
++  if ( b )  
++    o = sscanf( b + strlen( key ), ": %llu", val );
++}
++
++static void processMemInfo()
++{
++  scan_one( MemInfoBuf, "MemTotal", &Total );
++  scan_one( MemInfoBuf, "MemFree", &MFree );
++  scan_one( MemInfoBuf, "Buffers", &Buffers );
++  scan_one( MemInfoBuf, "Cached", &Cached );
++  scan_one( MemInfoBuf, "SwapTotal", &STotal );
++  scan_one( MemInfoBuf, "SwapFree", &SFree );
++  Used = Total - MFree;
++  Appl = ( Used - ( Buffers + Cached ) );
++
++  if ( STotal == 0 ) /* no swap activated */
++    SUsed = 0;
++  else
++    SUsed = STotal - SFree;
++
++  Dirty = 0;
++}
++
++/*
++================================ public part =================================
++*/
++
++void initMemory( struct SensorModul* sm )
++{
++  /**
++    Make sure that /proc/meminfo exists and is readable. If not we do
++    not register any monitors for memory.
++   */
++  if ( updateMemory() < 0 )
++    return;
++
++  registerMonitor( "mem/physical/free", "integer", printMFree, printMFreeInfo, sm );
++  registerMonitor( "mem/physical/used", "integer", printUsed, printUsedInfo, sm );
++  registerMonitor( "mem/physical/application", "integer", printAppl, printApplInfo, sm );
++  registerMonitor( "mem/physical/buf", "integer", printBuffers, printBuffersInfo, sm );
++  registerMonitor( "mem/physical/cached", "integer", printCached, printCachedInfo, sm );
++  registerMonitor( "mem/swap/used", "integer", printSwapUsed, printSwapUsedInfo, sm );
++  registerMonitor( "mem/swap/free", "integer", printSwapFree, printSwapFreeInfo, sm );
++}
++
++void exitMemory( void )
++{
++}
++
++int updateMemory( void )
++{
++  /**
++    The amount of total and used memory is read from the /proc/meminfo.
++    It also contains the information about the swap space.
++    The 'file' looks like this:
++
++    MemTotal:       516560 kB
++    MemFree:          7812 kB
++    MemShared:           0 kB
++    Buffers:         80312 kB
++    Cached:         236432 kB
++    SwapCached:        468 kB
++    Active:         291992 kB
++    Inactive:       133556 kB
++    HighTotal:           0 kB
++    HighFree:            0 kB
++    LowTotal:       516560 kB
++    LowFree:          7812 kB
++    SwapTotal:      899632 kB
++    SwapFree:       898932 kB
++    Dirty:            2736 kB
++    Writeback:           0 kB
++    Mapped:         155996 kB
++    Slab:            73920 kB
++    Committed_AS:   315588 kB
++    PageTables:       1764 kB
++    ReverseMaps:    103458
++   */
++
++  int fd;
++  size_t n;
++
++  if ( ( fd = open( "/proc/meminfo", O_RDONLY ) ) < 0 ) {
++    print_error( "Cannot open \'/proc/meminfo\'!\n"
++                 "The kernel needs to be compiled with support\n"
++                 "for /proc file system enabled!\n" );
++    return -1;
++  }
++
++  n = read( fd, MemInfoBuf, MEMINFOBUFSIZE - 1 );
++  if ( n == MEMINFOBUFSIZE - 1 || n <= 0 ) {
++    log_error( "Internal buffer too small to read \'/proc/mem\'" );
++    close( fd );
++    return -1;
++  }
++
++  close( fd );
++  MemInfoBuf[ n ] = '\0';
++  Dirty = 1;
++
++  return 0;
++}
++
++void printMFree( const char* cmd )
++{
++  (void)cmd;
++
++  if ( Dirty )
++    processMemInfo();
++
++  output( "%llu\n", MFree );
++}
++
++void printMFreeInfo( const char* cmd )
++{
++  (void)cmd;
++
++  if ( Dirty )
++    processMemInfo();
++
++  output( "Free Memory\t0\t%llu\tKB\n", Total );
++}
++
++void printUsed( const char* cmd )
++{
++  (void)cmd;
++
++  if ( Dirty )
++    processMemInfo();
++
++  output( "%llu\n", Used );
++}
++
++void printUsedInfo( const char* cmd )
++{
++  (void)cmd;
++
++  if ( Dirty )
++    processMemInfo();
++
++  output( "Used Memory\t0\t%llu\tKB\n", Total );
++}
++
++void printAppl( const char* cmd )
++{
++  (void)cmd;
++
++  if ( Dirty )
++    processMemInfo();
++
++  output( "%llu\n", Appl );
++}
++
++void printApplInfo( const char* cmd )
++{
++  (void)cmd;
++
++  if ( Dirty )
++    processMemInfo();
++
++  output( "Application Memory\t0\t%llu\tKB\n", Total );
++}
++
++void printBuffers( const char* cmd )
++{
++  (void)cmd;
++
++  if ( Dirty )
++    processMemInfo();
++
++  output( "%llu\n", Buffers );
++}
++
++void printBuffersInfo( const char* cmd )
++{
++  (void)cmd;
++
++  if ( Dirty )
++    processMemInfo();
++
++  output( "Buffer Memory\t0\t%llu\tKB\n", Total );
++}
++
++void printCached( const char* cmd )
++{
++  (void)cmd;
++
++  if ( Dirty )
++    processMemInfo();
++
++  output( "%llu\n", Cached );
++}
++
++void printCachedInfo( const char* cmd )
++{
++  (void)cmd;
++
++  if ( Dirty )
++    processMemInfo();
++
++  output( "Cached Memory\t0\t%llu\tKB\n", Total );
++}
++
++void printSwapUsed( const char* cmd )
++{
++  (void)cmd;
++
++  if ( Dirty )
++    processMemInfo();
++
++  output( "%llu\n", SUsed );
++}
++
++void printSwapUsedInfo( const char* cmd )
++{
++  (void)cmd;
++
++  if ( Dirty )
++    processMemInfo();
++
++  output( "Used Swap Memory\t0\t%llu\tKB\n", STotal );
++}
++
++void printSwapFree( const char* cmd )
++{
++  (void)cmd;
++
++  if ( Dirty )
++    processMemInfo();
++
++  output( "%llu\n", SFree );
++}
++
++void printSwapFreeInfo( const char* cmd )
++{
++  (void)cmd;
++
++  if ( Dirty )
++    processMemInfo();
++
++  output( "Free Swap Memory\t0\t%llu\tKB\n", STotal );
++}
+--- origsrc/kdebase-workspace-4.3.5/ksysguard/ksysguardd/Cygwin/Memory.h	1969-12-31 18:00:00.000000000 -0600
++++ src/kdebase-workspace-4.3.5/ksysguard/ksysguardd/Cygwin/Memory.h	2010-02-01 20:09:11.187821400 -0600
+@@ -0,0 +1,45 @@
++/*
++    KSysGuard, the KDE System Guard
++
++    Copyright (c) 1999 - 2001 Chris Schlaeger <cs@kde.org>
++
++    This program is free software; you can redistribute it and/or modify
++    it under the terms of the GNU General Public License as published by
++    the Free Software Foundation; either version 2 of the License, or
++    (at your option) any later version.
++
++    This program is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++    GNU General Public License for more details.
++
++    You should have received a copy of the GNU General Public License
++    along with this program; if not, write to the Free Software
++    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
++
++*/
++
++#ifndef KSG_MEMORY_H
++#define KSG_MEMORY_H
++
++void initMemory( struct SensorModul* );
++void exitMemory( void );
++
++int updateMemory( void );
++
++void printMFree( const char* );
++void printMFreeInfo( const char* );
++void printUsed( const char* );
++void printUsedInfo( const char* );
++void printAppl( const char* );
++void printApplInfo( const char* );
++void printBuffers( const char* );
++void printBuffersInfo( const char* );
++void printCached( const char* );
++void printCachedInfo( const char* );
++void printSwapUsed( const char* );
++void printSwapUsedInfo( const char* );
++void printSwapFree( const char* );
++void printSwapFreeInfo( const char* );
++
++#endif
+--- origsrc/kdebase-workspace-4.3.5/ksysguard/ksysguardd/Cygwin/ProcessList.c	1969-12-31 18:00:00.000000000 -0600
++++ src/kdebase-workspace-4.3.5/ksysguard/ksysguardd/Cygwin/ProcessList.c	2010-02-01 22:17:29.406134300 -0600
+@@ -0,0 +1,522 @@
++/*
++    KSysGuard, the KDE System Guard
++
++    Copyright (c) 1999 - 2001 Chris Schlaeger <cs@kde.org>
++
++    This program is free software; you can redistribute it and/or
++    modify it under the terms of version 2 of the GNU General Public
++    License as published by the Free Software Foundation.
++
++    This program is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++    GNU General Public License for more details.
++
++    You should have received a copy of the GNU General Public License
++    along with this program; if not, write to the Free Software
++    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
++
++*/
++
++#include <ctype.h>
++#include <dirent.h>
++#include <errno.h>
++#include <signal.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++#include <sys/time.h>
++#include <sys/resource.h>
++#include <time.h>
++#include <unistd.h>
++
++
++#include "../../gui/SignalIDs.h"
++#include "Command.h"
++#include "PWUIDCache.h"
++#include "ccont.h"
++#include "ksysguardd.h"
++
++#include "ProcessList.h"
++
++#define BUFSIZE 1024
++#define TAGSIZE 32
++#define KDEINITLEN sizeof( "kdeinit: " )
++
++#ifndef bool
++#define bool char
++#define true 1
++#define false 0
++#endif
++
++typedef struct {
++
++  /** The parent process ID */
++  pid_t ppid;
++
++  /** The real user ID */
++  uid_t uid;
++
++  /** The real group ID */
++  gid_t gid;
++
++  /** The process ID of any application that is debugging this one. 0 if none */
++  pid_t tracerpid;
++
++  /** A character description of the process status */
++  char status[ 16 ];
++
++  /** The tty the process owns */
++  char tty[10];
++
++  /**
++    The nice level. The range should be -20 to 20. I'm not sure
++    whether this is true for all platforms.
++   */
++  int niceLevel;
++
++  /** The scheduling priority. */
++  int priority;
++
++  /** The i/o scheduling class and priority. */
++  int ioPriorityClass;  /**< 0 for none, 1 for realtime, 2 for best-effort, 3 for idle.  -1 for error. */
++  int ioPriority;       /**< Between 0 and 7.  0 is highest priority, 7 is lowest.  -1 for error. */
++
++  /**
++    The total amount of virtual memory space that this process uses. This includes shared and
++    swapped memory, plus graphics memory and mmap'ed files and so on.
++
++    This is in KiB
++   */
++  unsigned long vmSize;
++
++  /**
++    The amount of physical memory the process currently uses, including the physical memory used by any
++    shared libraries that it uses.  Hence 2 processes sharing a library will both report their vmRss as including
++    this shared memory, even though it's only allocated once. 
++   
++    This is in KiB
++   */
++  
++  unsigned long vmRss;
++
++  /** The amount of physical memory that is used by this process, not including any memory used by any shared libraries.
++   *  This is in KiB */
++  unsigned long vmURss;
++
++  /**
++    The number of 1/100 of a second the process has spend in user space.
++    If a machine has an uptime of 1 1/2 years or longer this is not a
++    good idea. I never thought that the stability of UNIX could get me
++    into trouble! ;)
++   */
++  unsigned long userTime;
++
++  /**
++    The number of 1/100 of a second the process has spent in system space.
++    If a machine has an uptime of 1 1/2 years or longer this is not a
++    good idea. I never thought that the stability of UNIX could get me
++    into trouble! ;)
++   */
++  unsigned long sysTime;
++
++  /* NOTE:  To get the user/system percentage, record the userTime and sysTime from between calls, then use the difference divided by the difference in time measure in 100th's of a second */
++
++  /** The name of the process */
++  char name[ 64 ];
++
++  /** The command used to start the process */
++  char cmdline[ 256 ];
++
++  /** The login name of the user that owns this process */
++  char userName[ 32 ];
++
++} ProcessInfo;
++
++static unsigned ProcessCount;
++static DIR* procDir;
++static void validateStr( char* str )
++{
++  char* s = str;
++
++  /* All characters that could screw up the communication will be removed. */
++  while ( *s ) {
++    if ( *s == '\t' || *s == '\n' || *s == '\r' )
++      *s = ' ';
++    ++s;
++  }
++
++  /* Make sure that string contains at least one character (blank). */
++  if ( str[ 0 ] == '\0' )
++    strcpy( str, " " );
++}
++
++static bool getProcess( int pid, ProcessInfo *ps )
++{
++  FILE* fd;
++  char buf[ BUFSIZE ];
++  char tag[ TAGSIZE ];
++  char format[ 32 ];
++  char tagformat[ 32 ];
++  const char* uName;
++  char status;
++
++  snprintf( buf, BUFSIZE - 1, "/proc/%d/status", pid );
++  if ( ( fd = fopen( buf, "r" ) ) == 0 ) {
++    /* process has terminated in the mean time */
++    return false;
++  }
++  ps->uid = 0;
++  ps->gid = 0;
++  ps->tracerpid = 0;
++  
++  sprintf( format, "%%%d[^\n]\n", (int)sizeof( buf ) - 1 );
++  sprintf( tagformat, "%%%ds", (int)sizeof( tag ) - 1 );
++  for ( ;; ) {
++    if ( fscanf( fd, format, buf ) != 1 )
++      break;
++    buf[ sizeof( buf ) - 1 ] = '\0';
++    sscanf( buf, tagformat, tag );
++    tag[ sizeof( tag ) - 1 ] = '\0';
++    if ( strcmp( tag, "Name:" ) == 0 ) {
++      sscanf( buf, "%*s %63s", ps->name );
++      validateStr( ps->name );
++    } else if ( strcmp( tag, "Uid:" ) == 0 ) {
++      sscanf( buf, "%*s %d %*d %*d %*d", (int*)&ps->uid );
++    } else if ( strcmp( tag, "Gid:" ) == 0 ) {
++      sscanf( buf, "%*s %d %*d %*d %*d", (int*)&ps->gid );
++    } else if ( strcmp( tag, "TracerPid:" ) == 0 ) {
++      sscanf( buf, "%*s %d", (int*)&ps->tracerpid );
++    }
++  }
++
++  if ( fclose( fd ) )
++    return false;
++
++  snprintf( buf, BUFSIZE - 1, "/proc/%d/stat", pid );
++  buf[ BUFSIZE - 1 ] = '\0';
++  if ( ( fd = fopen( buf, "r" ) ) == 0 )
++    return false;
++  int ttyNo;
++  if ( fscanf( fd, "%*d %*s %c %d %*d %*d %d %*d %*u %*u %*u %*u %*u %lu %lu"
++                   "%*d %*d %*d %d %*u %*u %*d %lu %lu",
++                   &status, (int*)&ps->ppid, &ttyNo,
++                   &ps->userTime, &ps->sysTime, &ps->niceLevel, &ps->vmSize,
++                   &ps->vmRss) != 8 ) {
++    fclose( fd );
++    return false;
++  }
++  int major = ttyNo >> 8;
++  int minor = ttyNo & 0xff;
++  switch(major) {
++    case 136:
++      snprintf(ps->tty, sizeof(ps->tty)-1, "pts/%d", minor);
++      break;
++    case 4:
++      if(minor < 64)
++        snprintf(ps->tty, sizeof(ps->tty)-1, "tty/%d", minor);
++      else
++        snprintf(ps->tty, sizeof(ps->tty)-1, "ttyS/%d", minor-64);
++      break;
++    default:
++      ps->tty[0] = 0;
++  }
++
++  /*There was a "(ps->vmRss+3) * sysconf(_SC_PAGESIZE)" here originally.  I have no idea why!  After comparing it to
++  meminfo and other tools, this means we report the RSS by 12 bytes different compared to them.  So I'm removing the +3
++  to be consistent.  NEXT TIME COMMENT STRANGE THINGS LIKE THAT! :-)*/
++  ps->vmRss = ps->vmRss * sysconf(_SC_PAGESIZE) / 1024; /*convert to KiB*/
++  ps->vmSize /= 1024; /* convert to KiB */
++
++  if ( fclose( fd ) )
++    return false;
++
++  snprintf( buf, BUFSIZE - 1, "/proc/%d/statm", pid );
++  buf[ BUFSIZE - 1 ] = '\0';
++  ps->vmURss = -1;
++  if ( ( fd = fopen( buf, "r" ) ) != 0 )  {
++    unsigned long shared;
++    if ( fscanf( fd, "%*d %*u %lu",
++                   &shared)==1) {
++      /* we use the rss - shared  to find the amount of memory just this app uses */
++      ps->vmURss = ps->vmRss - (shared * sysconf(_SC_PAGESIZE) / 1024);
++    }
++    fclose( fd );
++  }
++
++
++  /* status decoding as taken from fs/proc/array.c */
++  if ( status == 'R' )
++    strcpy( ps->status, "running" );
++  else if ( status == 'S' )
++    strcpy( ps->status, "sleeping" );
++  else if ( status == 'D' )
++    strcpy( ps->status, "disk sleep" );
++  else if ( status == 'Z' )
++    strcpy( ps->status, "zombie" );
++  else if ( status == 'T' )
++    strcpy( ps->status, "stopped" );
++  else if ( status == 'W' )
++    strcpy( ps->status, "paging" );
++  else
++    sprintf( ps->status, "Unknown: %c", status );
++
++
++  snprintf( buf, BUFSIZE - 1, "/proc/%d/cmdline", pid );
++  if ( ( fd = fopen( buf, "r" ) ) == 0 )
++    return false;
++
++  ps->cmdline[ 0 ] = '\0';
++
++  unsigned int i =0;
++  while( (ps->cmdline[i] = fgetc(fd)) != EOF && i < sizeof(ps->cmdline)-3) {
++    if(ps->cmdline[i] == '\0')
++      ps->cmdline[i] = ' ';
++    i++;
++  }
++
++
++  if(i > 2) {
++    if(ps->cmdline[i-2] == ' ') ps->cmdline[i-2] = '\0';
++    else ps->cmdline[i-1] = '\0';
++  } else {
++    ps->cmdline[0] = '\0';
++  }
++
++  validateStr( ps->cmdline );
++  if ( fclose( fd ) )
++    return false;
++
++  /* Ugly hack to "fix" program name for kdeinit launched programs. */
++  if ( strcmp( ps->name, "kdeinit" ) == 0 &&
++       strncmp( ps->cmdline, "kdeinit: ", KDEINITLEN ) == 0 &&
++       strcmp( ps->cmdline + KDEINITLEN, "Running..." ) != 0 ) {
++    size_t len;
++    char* end = strchr( ps->cmdline + KDEINITLEN, ' ' );
++    if ( end )
++      len = ( end - ps->cmdline ) - KDEINITLEN;
++    else
++      len = strlen( ps->cmdline + KDEINITLEN );
++    if ( len > 0 ) {
++      if ( len > sizeof( ps->name ) - 1 )
++        len = sizeof( ps->name ) - 1;
++      strncpy( ps->name, ps->cmdline + KDEINITLEN, len );
++      ps->name[ len ] = '\0';
++    }
++  }
++  /* find out user name with the process uid */
++  uName = getCachedPWUID( ps->uid );
++  strncpy( ps->userName, uName, sizeof( ps->userName ) - 1 );
++  ps->userName[ sizeof( ps->userName ) - 1 ] = '\0';
++  validateStr( ps->userName );
++
++  return true;
++}
++
++void printProcessList( const char* cmd)
++{
++  (void)cmd;
++  struct dirent* entry;
++
++  ProcessInfo ps;
++  ProcessCount = 0;
++  rewinddir(procDir);
++  while ( ( entry = readdir( procDir ) ) ) {
++    if ( isdigit( entry->d_name[ 0 ] ) ) {
++      long pid;
++      pid = atol( entry->d_name );
++      if(getProcess( pid, &ps )) /* Print out the details of the process.  Because of a stupid bug in kde3 ksysguard, make sure cmdline and tty are not empty */
++        output( "%s\t%ld\t%ld\t%lu\t%lu\t%s\t%lu\t%lu\t%d\t%lu\t%lu\t%lu\t%s\t%ld\t%s\t%s\t%d\t%d\n",
++	     ps.name, pid, (long)ps.ppid,
++             (long)ps.uid, (long)ps.gid, ps.status, ps.userTime,
++             ps.sysTime, ps.niceLevel, ps.vmSize, ps.vmRss, ps.vmURss,
++             (ps.userName[0]==0)?" ":ps.userName, (long)ps.tracerpid,
++	     (ps.tty[0]==0)?" ":ps.tty, (ps.cmdline[0]==0)?" ":ps.cmdline, 
++	     ps.ioPriorityClass, ps.ioPriority
++	     );
++    }
++  }
++  output( "\n" );
++  return;
++}
++
++
++/*
++================================ public part =================================
++*/
++
++void initProcessList( struct SensorModul* sm )
++{
++  initPWUIDCache();
++
++  registerMonitor( "pscount", "integer", printProcessCount, printProcessCountInfo, sm );
++  registerMonitor( "ps", "table", printProcessList, printProcessListInfo, sm );
++
++  if ( !RunAsDaemon ) {
++    registerCommand( "kill", killProcess );
++    registerCommand( "setpriority", setPriority );
++  }
++
++  /*open /proc now in advance*/
++  /* read in current process list via the /proc file system entry */
++  if ( ( procDir = opendir( "/proc" ) ) == NULL ) {
++    print_error( "Cannot open directory \'/proc\'!\n"
++                 "The kernel needs to be compiled with support\n"
++                 "for /proc file system enabled!\n" );
++    return;
++  }
++}
++
++void exitProcessList( void )
++{
++  removeMonitor( "ps" );
++  removeMonitor( "pscount" );
++
++  if ( !RunAsDaemon ) {
++    removeCommand( "kill" );
++    removeCommand( "setpriority" );
++  }
++
++  exitPWUIDCache();
++}
++
++void printProcessListInfo( const char* cmd )
++{
++  (void)cmd;
++  output( "Name\tPID\tPPID\tUID\tGID\tStatus\tUser Time\tSystem Time\tNice\tVmSize"
++                          "\tVmRss\tVmURss\tLogin\tTracerPID\tTTY\tCommand\tIO Priority Class\tIO Priority\n" );
++  output( "s\td\td\td\td\tS\td\td\td\tD\tD\tD\ts\td\ts\ts\td\td\n" );
++}
++
++void printProcessCount( const char* cmd )
++{
++  (void)cmd;
++  struct dirent* entry;
++  ProcessCount = 0;
++  rewinddir(procDir);
++  while ( ( entry = readdir( procDir ) ) )
++    if ( isdigit( entry->d_name[ 0 ] ) )
++      ProcessCount++;
++
++
++  output( "%d\n", ProcessCount );
++}
++
++void printProcessCountInfo( const char* cmd )
++{
++  (void)cmd;
++  output( "Number of Processes\t0\t0\t\n" );
++}
++
++void killProcess( const char* cmd )
++{
++  /* Sends a signal (not neccessarily kill!) to the process.  cmd is a string containing "kill <pid> <signal>" */
++  int sig, pid;
++
++  sscanf( cmd, "%*s %d %d", &pid, &sig );
++  switch( sig ) {
++    case MENU_ID_SIGABRT:
++      sig = SIGABRT;
++      break;
++    case MENU_ID_SIGALRM:
++      sig = SIGALRM;
++      break;
++    case MENU_ID_SIGCHLD:
++      sig = SIGCHLD;
++      break;
++    case MENU_ID_SIGCONT:
++      sig = SIGCONT;
++      break;
++    case MENU_ID_SIGFPE:
++      sig = SIGFPE;
++      break;
++    case MENU_ID_SIGHUP:
++      sig = SIGHUP;
++      break;
++    case MENU_ID_SIGILL:
++      sig = SIGILL;
++      break;
++    case MENU_ID_SIGINT:
++      sig = SIGINT;
++      break;
++    case MENU_ID_SIGKILL:
++      sig = SIGKILL;
++      break;
++    case MENU_ID_SIGPIPE:
++      sig = SIGPIPE;
++      break;
++    case MENU_ID_SIGQUIT:
++      sig = SIGQUIT;
++      break;
++    case MENU_ID_SIGSEGV:
++      sig = SIGSEGV;
++      break;
++    case MENU_ID_SIGSTOP:
++      sig = SIGSTOP;
++      break;
++    case MENU_ID_SIGTERM:
++      sig = SIGTERM;
++      break;
++    case MENU_ID_SIGTSTP:
++      sig = SIGTSTP;
++      break;
++    case MENU_ID_SIGTTIN:
++      sig = SIGTTIN;
++      break;
++    case MENU_ID_SIGTTOU:
++      sig = SIGTTOU;
++      break;
++    case MENU_ID_SIGUSR1:
++      sig = SIGUSR1;
++      break;
++    case MENU_ID_SIGUSR2:
++      sig = SIGUSR2;
++      break;
++  }
++
++  if ( kill( (pid_t)pid, sig ) ) {
++    switch ( errno ) {
++      case EINVAL:
++        output( "4\t%d\n", pid );
++        break;
++      case ESRCH:
++        output( "3\t%d\n", pid );
++        break;
++      case EPERM:
++	if(vfork() == 0) {
++	  exit(0);/* Won't execute unless execve fails.  Need this for the parent process to continue */
++	}
++        output( "2\t%d\n", pid );
++        break;
++      default: /* unknown error */
++        output( "1\t%d\n", pid );
++        break;
++    }
++  } else
++    output( "0\t%d\n", pid );
++}
++
++void setPriority( const char* cmd )
++{
++  int pid, prio;
++  /** as:  setpriority <pid> <priority> */
++  sscanf( cmd, "%*s %d %d", &pid, &prio );
++  if ( setpriority( PRIO_PROCESS, pid, prio ) ) {
++    switch ( errno ) {
++      case EINVAL:
++        output( "4\t%d\t%d\n", pid, prio  );
++        break;
++      case ESRCH:
++        output( "3\t%d\t%d\nn", pid, prio );
++        break;
++      case EPERM:
++      case EACCES:
++        output( "2\t%d\t%d\n", pid, prio );
++        break;
++      default: /* unknown error */
++        output( "1\t%d\t%d\n", pid, prio );
++        break;
++    }
++  } else
++    output( "0\t%d\t%d\n",pid, prio );
++}
+--- origsrc/kdebase-workspace-4.3.5/ksysguard/ksysguardd/Cygwin/ProcessList.h	1969-12-31 18:00:00.000000000 -0600
++++ src/kdebase-workspace-4.3.5/ksysguard/ksysguardd/Cygwin/ProcessList.h	2010-02-01 20:09:11.198822000 -0600
+@@ -0,0 +1,37 @@
++/*
++    KSysGuard, the KDE System Guard
++
++    Copyright (c) 1999 - 2000 Chris Schlaeger <cs@kde.org>
++
++    This program is free software; you can redistribute it and/or modify
++    it under the terms of the GNU General Public License as published by
++    the Free Software Foundation; either version 2 of the License, or
++    (at your option) any later version.
++
++    This program is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++    GNU General Public License for more details.
++
++    You should have received a copy of the GNU General Public License
++    along with this program; if not, write to the Free Software
++    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
++
++*/
++
++#ifndef KSG_PROCESSLIST_H
++#define KSG_PROCESSLIST_H
++
++void initProcessList( struct SensorModul* );
++void exitProcessList( void );
++
++void printProcessList( const char* );
++void printProcessListInfo( const char* );
++void printProcessCount( const char* );
++void printProcessCountInfo( const char* );
++
++void killProcess( const char* );
++void setPriority( const char* );
++void ioniceProcess( const char* );
++
++#endif
+--- origsrc/kdebase-workspace-4.3.5/ksysguard/ksysguardd/Cygwin/cpuinfo.c	1969-12-31 18:00:00.000000000 -0600
++++ src/kdebase-workspace-4.3.5/ksysguard/ksysguardd/Cygwin/cpuinfo.c	2010-02-01 20:09:11.157819700 -0600
+@@ -0,0 +1,276 @@
++/*
++    KSysGuard, the KDE System Guard
++
++    Copyright (c) 2000-2001 Chris Schlaeger <cs@kde.org>
++
++    This program is free software; you can redistribute it and/or
++    modify it under the terms of version 2 of the GNU General Public
++    License as published by the Free Software Foundation.
++
++    This program is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++    GNU General Public License for more details.
++
++    You should have received a copy of the GNU General Public License
++    along with this program; if not, write to the Free Software
++    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
++
++*/
++
++#include <sys/types.h>
++#include <sys/stat.h>
++#include <fcntl.h>
++#include <unistd.h>
++#include <stdlib.h>
++#include <stdio.h>
++#include <string.h>
++#include <ctype.h>
++#include <time.h>
++
++#include "Command.h"
++#include "ksysguardd.h"
++
++#include "cpuinfo.h"
++
++static int CpuInfoOK = 0;
++static int numProcessors = 0; /* Total number of physical processors */
++static int HighNumProcessors = 0; /* Highest # number of physical processors ever seen */
++static int numCores = 0; /* Total # of cores */
++static int HighNumCores = 0; /* Highest # of cores ever seen */
++static float* Clocks = 0; /* Array with one entry per core */
++
++#define CPUINFOBUFSIZE (32 * 1024)
++static char CpuInfoBuf[ CPUINFOBUFSIZE ];
++static int Dirty = 0;
++static struct SensorModul *CpuInfoSM;
++
++static void processCpuInfo( void )
++{
++    char format[ 32 ];
++    char tag[ 32 ];
++    char value[ 256 ];
++    char* cibp = CpuInfoBuf;
++
++    /* coreUniqueId is not per processor; it is a counter of the number of cores encountered
++     * by the parse thus far */
++    int coreUniqueId = 0;
++
++    /* Reset global variables */
++    numCores = 0;
++    numProcessors = 0;
++
++    if ( !CpuInfoOK )
++        return;
++
++    sprintf( format, "%%%d[^:]: %%%d[^\n]\n", (int)sizeof( tag ) - 1,
++            (int)sizeof( value ) - 1 );
++
++    while ( sscanf( cibp, format, tag, value ) == 2 ) {
++        char* p;
++
++        tag[ sizeof( tag ) - 1 ] = '\0';
++        value[ sizeof( value ) - 1 ] = '\0';
++
++        /* remove trailing whitespaces */
++        p = tag + strlen( tag ) - 1;
++        /* remove trailing whitespaces */
++        while ( ( *p == ' ' || *p == '\t' ) && p > tag )
++            *p-- = '\0';
++
++        if ( strcmp( tag, "processor" ) == 0 ) {
++            if ( sscanf( value, "%d", &coreUniqueId ) == 1 ) {
++                if ( coreUniqueId >= HighNumCores ) {
++                    /* Found a new processor core. Maybe even a new processor. (We'll check later) */
++                    char cmdName[ 24 ];
++
++                    /* Each core has a clock speed. Allocate one per core found. */
++                    Clocks = (float*) realloc( Clocks, (coreUniqueId+1) * sizeof( float ) );
++                    memset(Clocks + HighNumCores, 0, (coreUniqueId +1 - HighNumCores) * sizeof( float ));
++
++                    HighNumCores = coreUniqueId + 1;
++
++                    snprintf( cmdName, sizeof( cmdName ) - 1, "cpu/cpu%d/clock", coreUniqueId );
++                    registerMonitor( cmdName, "float", printCPUxClock, printCPUxClockInfo,
++                            CpuInfoSM );
++                }
++            }
++        } else if ( strcmp( tag, "cpu MHz" ) == 0 ) {
++            if (HighNumCores > coreUniqueId) {
++                /* The if statement above *should* always be true, but there's no harm in being safe. */
++                sscanf( value, "%f", &Clocks[ coreUniqueId ] );
++            }
++        } else if ( strcmp( tag, "core id" ) == 0 ) {
++            /* the core id is per processor */
++            int curCore;
++
++            if ( (sscanf( value, "%d", &curCore ) == 1) && curCore == 0 ) {
++                /* core id is back at 0. We just found a new processor. */
++                numProcessors++;
++
++                if (numProcessors > HighNumProcessors)
++                    HighNumProcessors = numProcessors;
++            }
++        }
++        /* Move cibp to beginning of next line, if there is one. */
++        cibp = strchr( cibp, '\n' );
++        if ( cibp )
++            cibp++;
++        else
++            cibp = CpuInfoBuf + strlen( CpuInfoBuf );
++    }
++
++    numCores = coreUniqueId + 1;
++
++    Dirty = 0;
++}
++
++/*
++================================ public part =================================
++*/
++
++void initCpuInfo( struct SensorModul* sm )
++{
++    CpuInfoSM = sm;
++
++    if ( updateCpuInfo() < 0 )
++        return;
++
++    registerMonitor( "system/processors", "integer", printNumCpus, printNumCpusInfo,
++            CpuInfoSM );
++    registerMonitor( "system/cores", "integer", printNumCores, printNumCoresInfo,
++            CpuInfoSM );
++
++    processCpuInfo();
++
++    registerMonitor( "cpu/system/AverageClock", "float", printCPUClock, printCPUClockInfo,
++            CpuInfoSM );
++}
++
++void exitCpuInfo( void )
++{
++    CpuInfoOK = -1;
++
++    free( Clocks );
++}
++
++int updateCpuInfo( void )
++{
++    size_t n;
++    int fd;
++
++    if ( CpuInfoOK < 0 )
++        return -1;
++
++    if ( ( fd = open( "/proc/cpuinfo", O_RDONLY ) ) < 0 ) {
++        if ( CpuInfoOK != 0 )
++            print_error( "Cannot open file \'/proc/cpuinfo\'!\n"
++                    "The kernel needs to be compiled with support\n"
++                    "for /proc file system enabled!\n" );
++        CpuInfoOK = -1;
++        return -1;
++    }
++
++    n = 0;
++    for(;;) {
++        ssize_t len = read( fd, CpuInfoBuf + n, CPUINFOBUFSIZE - 1 - n );
++        if( len < 0 ) {
++            print_error( "Failed to read file \'/proc/cpuinfo\'!\n" );
++            CpuInfoOK = -1;
++            close( fd );
++            return -1;
++        }
++        n += len;
++        if( len == 0 ) /* reading finished */
++            break;
++        if( n == CPUINFOBUFSIZE - 1 ) {
++            log_error( "Internal buffer too small to read \'/proc/cpuinfo\'" );
++            CpuInfoOK = 0;
++            close( fd );
++            return -1;
++        }
++    }
++
++    close( fd );
++    CpuInfoOK = 1;
++    CpuInfoBuf[ n ] = '\0';
++    Dirty = 1;
++
++    return 0;
++}
++
++void printCPUxClock( const char* cmd )
++{
++    int id;
++
++    if ( Dirty )
++        processCpuInfo();
++
++    sscanf( cmd + 7, "%d", &id );
++    output( "%f\n", Clocks[ id ] );
++}
++
++void printCPUClock( const char* cmd )
++{
++    int id;
++    float clock = 0;
++    cmd = cmd; /*Silence warning*/
++
++    if ( Dirty ) {
++        processCpuInfo();
++    }
++
++    for ( id = 0; id < HighNumCores; id++ ) {
++        clock += Clocks[ id ];
++    }
++    clock /= HighNumCores;
++    output( "%f\n", clock );
++}
++
++void printCPUxClockInfo( const char* cmd )
++{
++    int id;
++
++    sscanf( cmd + 7, "%d", &id );
++    output( "CPU%d Clock Frequency\t0\t0\tMHz\n", id );
++}
++
++void printCPUClockInfo( const char* cmd )
++{
++    cmd = cmd; /*Silence warning*/
++    output( "CPU Clock Frequency\t0\t0\tMHz\n" );
++}
++
++void printNumCpus( const char* cmd )
++{
++    (void) cmd;
++
++    if ( Dirty )
++        processCpuInfo();
++
++    output( "%d\n", numProcessors );
++}
++
++void printNumCpusInfo( const char* cmd )
++{
++    (void) cmd;
++
++    output( "Number of physical CPUs\t0\t0\t\n" );
++}
++
++void printNumCores( const char* cmd )
++{
++    (void) cmd;
++
++    if ( Dirty )
++        processCpuInfo();
++
++    output( "%d\n", numCores );
++}
++
++void printNumCoresInfo( const char* cmd )
++{
++    (void) cmd;
++
++    output( "Total number of processor cores\t0\t0\t\n" );
++}
+--- origsrc/kdebase-workspace-4.3.5/ksysguard/ksysguardd/Cygwin/cpuinfo.h	1969-12-31 18:00:00.000000000 -0600
++++ src/kdebase-workspace-4.3.5/ksysguard/ksysguardd/Cygwin/cpuinfo.h	2010-02-01 20:09:11.160819900 -0600
+@@ -0,0 +1,41 @@
++/*
++    KSysGuard, the KDE System Guard
++
++    Copyright (c) 2000-2001 Chris Schlaeger <cs@kde.org>
++
++    This program is free software; you can redistribute it and/or
++    modify it under the terms of version 2 of the GNU General Public
++    License as published by the Free Software Foundation.
++
++    This program is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++    GNU General Public License for more details.
++
++    You should have received a copy of the GNU General Public License
++    along with this program; if not, write to the Free Software
++    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
++
++*/
++
++#ifndef KSG_CPUINFO_H
++#define KSG_CPUINFO_H
++
++void initCpuInfo( struct SensorModul* );
++void exitCpuInfo( void );
++
++int updateCpuInfo( void );
++
++void printCPUxClock( const char* );
++void printCPUxClockInfo( const char* );
++
++void printCPUClock( const char* );
++void printCPUClockInfo( const char* );
++
++void printNumCpus( const char* cmd );
++void printNumCpusInfo( const char* cmd );
++
++void printNumCores( const char* cmd );
++void printNumCoresInfo( const char* cmd );
++
++#endif
+--- origsrc/kdebase-workspace-4.3.5/ksysguard/ksysguardd/Cygwin/diskstat.c	1969-12-31 18:00:00.000000000 -0600
++++ src/kdebase-workspace-4.3.5/ksysguard/ksysguardd/Cygwin/diskstat.c	2010-02-01 20:09:11.163820000 -0600
+@@ -0,0 +1,293 @@
++/*
++    KSysGuard, the KDE System Guard
++
++    Copyright (c) 2001 Tobias Koenig <tokoe@kde.org>
++
++    This program is free software; you can redistribute it and/or
++    modify it under the terms of version 2 of the GNU General Public
++    License as published by the Free Software Foundation.
++
++    This program is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++    GNU General Public License for more details.
++
++    You should have received a copy of the GNU General Public License
++    along with this program; if not, write to the Free Software
++    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
++
++*/
++
++#include <config-workspace.h>
++
++#include <mntent.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++#include <sys/stat.h>
++#include <sys/vfs.h>
++#include <time.h>
++#include <unistd.h>
++
++#include "Command.h"
++#include "ccont.h"
++#include "diskstat.h"
++#include "ksysguardd.h"
++
++typedef struct {
++  char device[ 256 ];
++  char mntpnt[ 256 ];
++  long blocks;
++  long bfree;
++  long bused;
++  int bused_percent;
++} DiskInfo;
++
++static CONTAINER DiskStatList = 0;
++static CONTAINER OldDiskStatList = 0;
++static struct SensorModul* DiskStatSM;
++char *getMntPnt( const char* cmd );
++
++char *getMntPnt( const char* cmd )
++{
++  static char device[ 1025 ];
++  char* ptr;
++
++  memset( device, 0, sizeof( device ) );
++  sscanf( cmd, "partitions%1024s", device );
++
++  ptr = (char*)rindex( device, '/' );
++  *ptr = '\0';
++
++  return (char*)device;
++}
++
++/* ----------------------------- public part ------------------------------- */
++
++static char monitor[ 1024 ];
++static void registerMonitors(const char* mntpnt) {
++    snprintf( monitor, sizeof( monitor ), "partitions%s/usedspace", mntpnt );
++    registerMonitor( monitor, "integer", printDiskStatUsed, printDiskStatUsedInfo, DiskStatSM );
++    snprintf( monitor, sizeof( monitor ), "partitions%s/freespace", mntpnt );
++    registerMonitor( monitor, "integer", printDiskStatFree, printDiskStatFreeInfo, DiskStatSM );
++    snprintf( monitor, sizeof( monitor ), "partitions%s/filllevel", mntpnt );
++    registerMonitor( monitor, "integer", printDiskStatPercent, printDiskStatPercentInfo, DiskStatSM );
++}
++static void removeMonitors(const char* mntpnt) {
++    snprintf( monitor, sizeof( monitor ), "partitions%s/usedspace", mntpnt );
++    removeMonitor( monitor );
++    snprintf( monitor, sizeof( monitor ), "partitions%s/freespace", mntpnt );
++    removeMonitor( monitor );
++    snprintf( monitor, sizeof( monitor ), "partitions%s/filllevel", mntpnt );
++    removeMonitor( monitor );
++}
++
++void initDiskStat( struct SensorModul* sm )
++{
++  DiskInfo* disk_info;
++
++  DiskStatList = NULL;
++  OldDiskStatList = NULL;
++  DiskStatSM = sm;
++  if ( updateDiskStat() < 0 )
++    return;
++
++  registerMonitor( "partitions/list", "listview", printDiskStat, printDiskStatInfo, sm );
++
++  for ( disk_info = first_ctnr( DiskStatList ); disk_info; disk_info = next_ctnr( DiskStatList ) ) {
++    registerMonitors(disk_info->mntpnt);
++  }
++}
++
++void exitDiskStat( void )
++{
++  DiskInfo* disk_info;
++
++  removeMonitor( "partitions/list" );
++
++  for ( disk_info = first_ctnr( DiskStatList ); disk_info; disk_info = next_ctnr( DiskStatList ) ) {
++    removeMonitors(disk_info->mntpnt);
++  }
++
++  destr_ctnr( DiskStatList, free );
++  if(OldDiskStatList)
++    destr_ctnr( OldDiskStatList, free );
++}
++
++void checkDiskStat( void )
++{
++  updateDiskStat();
++  DiskInfo* disk_info_new;
++  DiskInfo* disk_info_old;
++  int changed = 0;
++  for ( disk_info_new = first_ctnr( DiskStatList ); disk_info_new; disk_info_new = next_ctnr( DiskStatList ) ) {
++    int found = 0;
++    for ( disk_info_old = first_ctnr( OldDiskStatList ); disk_info_old; disk_info_old = next_ctnr( OldDiskStatList ) ) {
++      if(strcmp(disk_info_new->mntpnt, disk_info_old->mntpnt) == 0) {
++        free( remove_ctnr( OldDiskStatList ) );
++	found = 1;
++        continue;
++      }
++    }
++    if(!found) {
++      /* register all the devices that did not exist before*/
++      registerMonitors(disk_info_new->mntpnt);
++      changed++;
++    }
++  }
++  /*Now remove all the devices that do not exist anymore*/
++  for ( disk_info_old = first_ctnr( OldDiskStatList ); disk_info_old; disk_info_old = next_ctnr( OldDiskStatList ) ) {
++    removeMonitors(disk_info_old->mntpnt);
++    changed++;
++  }
++  destr_ctnr( OldDiskStatList, free );
++  OldDiskStatList = NULL;
++  updateDiskStat();
++  if(changed)
++      print_error( "RECONFIGURE" ); /*Let ksysguard know that we've added a sensor*/
++}
++
++int updateDiskStat( void )
++{
++  DiskInfo *disk_info;
++  FILE *fh;
++  struct mntent *mnt_info;
++  float percent;
++  struct statfs fs_info;
++
++  if ( ( fh = setmntent( "/etc/mtab", "r" ) ) == NULL ) {
++    print_error( "Cannot open \'/etc/mtab\'!\n" );
++    return -1;
++  }
++  if(OldDiskStatList == 0) {
++    OldDiskStatList = DiskStatList;
++    DiskStatList = new_ctnr();
++  }
++  else	  
++    empty_ctnr(DiskStatList);
++
++  while ( ( mnt_info = getmntent( fh ) ) != NULL ) {
++    if ( statfs( mnt_info->mnt_dir, &fs_info ) < 0 )
++      continue;
++
++    if ( strcmp( mnt_info->mnt_type, "proc" ) &&
++         strcmp( mnt_info->mnt_type, "devfs" ) &&
++         strcmp( mnt_info->mnt_type, "usbfs" ) &&
++         strcmp( mnt_info->mnt_type, "sysfs" ) &&
++         strcmp( mnt_info->mnt_type, "tmpfs" ) &&
++         strcmp( mnt_info->mnt_type, "devpts" ) ) {
++      if ( fs_info.f_blocks != 0 )
++      {
++          percent = ( ( (float)fs_info.f_blocks - (float)fs_info.f_bfree ) * 100.0/
++                (float)fs_info.f_blocks );
++      }
++      else
++          percent = 0;
++
++      if ( ( disk_info = (DiskInfo *)malloc( sizeof( DiskInfo ) ) ) == NULL )
++        continue;
++
++      memset( disk_info, 0, sizeof( DiskInfo ) );
++      strncpy( disk_info->device, mnt_info->mnt_fsname, sizeof( disk_info->device ) );
++      disk_info->device[ sizeof(disk_info->device) -1] = 0;
++      
++      if ( !strcmp( mnt_info->mnt_dir, "/" ) )
++        strncpy( disk_info->mntpnt, "/root", sizeof( disk_info->mntpnt ) );
++      else
++        strncpy( disk_info->mntpnt, mnt_info->mnt_dir, sizeof( disk_info->mntpnt ) );
++      disk_info->mntpnt[ sizeof(disk_info->mntpnt) - 1] = 0;
++
++      disk_info->blocks = fs_info.f_blocks;
++      disk_info->bfree = fs_info.f_bfree;
++      disk_info->bused = fs_info.f_blocks - fs_info.f_bfree;
++      disk_info->bused_percent = (int)percent;
++
++      push_ctnr( DiskStatList, disk_info );
++    }
++  }
++
++  endmntent( fh );
++
++  return 0;
++}
++
++void printDiskStat( const char* cmd )
++{
++  DiskInfo* disk_info;
++
++  (void)cmd;
++  for ( disk_info = first_ctnr( DiskStatList ); disk_info; disk_info = next_ctnr( DiskStatList ) ) {
++    output( "%s\t%ld\t%ld\t%ld\t%d\t%s\n",
++             disk_info->device,
++             disk_info->blocks,
++             disk_info->bused,
++             disk_info->bfree,
++             disk_info->bused_percent,
++             disk_info->mntpnt );
++  }
++
++  output( "\n" );
++}
++
++void printDiskStatInfo( const char* cmd )
++{
++  (void)cmd;
++  output( "Device\tBlocks\tUsed\tAvailable\tUsed %%\tMount point\nM\tD\tD\tD\td\ts\n" );
++}
++
++void printDiskStatUsed( const char* cmd )
++{
++  char *mntpnt = (char*)getMntPnt( cmd );
++  DiskInfo* disk_info;
++
++  for ( disk_info = first_ctnr( DiskStatList ); disk_info; disk_info = next_ctnr( DiskStatList ) ) {
++    if ( !strcmp( mntpnt, disk_info->mntpnt ) )
++      output( "%ld\n", disk_info->bused );
++  }
++
++  output( "\n" );
++}
++
++void printDiskStatUsedInfo( const char* cmd )
++{
++  (void)cmd;
++  output( "Used Blocks\t0\t-\tBlocks\n" );
++}
++
++void printDiskStatFree( const char* cmd )
++{
++  char *mntpnt = (char*)getMntPnt( cmd );
++  DiskInfo* disk_info;
++
++  for ( disk_info = first_ctnr( DiskStatList ); disk_info; disk_info = next_ctnr( DiskStatList ) ) {
++    if ( !strcmp( mntpnt, disk_info->mntpnt ) )
++      output( "%ld\n", disk_info->bfree );
++  }
++
++  output( "\n" );
++}
++
++void printDiskStatFreeInfo( const char* cmd )
++{
++  (void)cmd;
++  output( "Free Blocks\t0\t-\tBlocks\n" );
++}
++
++void printDiskStatPercent( const char* cmd )
++{
++  char *mntpnt = (char*)getMntPnt( cmd );
++  DiskInfo* disk_info;
++
++  for ( disk_info = first_ctnr( DiskStatList ); disk_info; disk_info = next_ctnr( DiskStatList ) ) {
++    if ( !strcmp( mntpnt, disk_info->mntpnt ) )
++      output( "%d\n", disk_info->bused_percent );
++  }
++
++  output( "\n" );
++}
++
++void printDiskStatPercentInfo( const char* cmd )
++{
++  (void)cmd;
++  output( "Used Blocks\t0\t100\t%%\n" );
++}
+--- origsrc/kdebase-workspace-4.3.5/ksysguard/ksysguardd/Cygwin/diskstat.h	1969-12-31 18:00:00.000000000 -0600
++++ src/kdebase-workspace-4.3.5/ksysguard/ksysguardd/Cygwin/diskstat.h	2010-02-01 20:09:11.165820100 -0600
+@@ -0,0 +1,40 @@
++/*
++    KSysGuard, the KDE System Guard
++
++    Copyright (c) 2001 Tobias Koenig <tokoe@kde.org>
++
++    This program is free software; you can redistribute it and/or
++    modify it under the terms of version 2 of the GNU General Public
++    License as published by the Free Software Foundation.
++
++    This program is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++    GNU General Public License for more details.
++
++    You should have received a copy of the GNU General Public License
++    along with this program; if not, write to the Free Software
++    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
++
++*/
++
++#ifndef KSG_DISKSTAT_H
++#define KSG_DISKSTAT_H
++
++void initDiskStat( struct SensorModul* );
++void exitDiskStat( void );
++
++int updateDiskStat( void );
++void checkDiskStat( void );
++
++void printDiskStat( const char* );
++void printDiskStatInfo( const char* );
++
++void printDiskStatUsed( const char* );
++void printDiskStatUsedInfo( const char* );
++void printDiskStatFree( const char* );
++void printDiskStatFreeInfo( const char* );
++void printDiskStatPercent( const char* );
++void printDiskStatPercentInfo( const char* );
++
++#endif
+--- origsrc/kdebase-workspace-4.3.5/ksysguard/ksysguardd/Cygwin/loadavg.c	1969-12-31 18:00:00.000000000 -0600
++++ src/kdebase-workspace-4.3.5/ksysguard/ksysguardd/Cygwin/loadavg.c	2010-02-01 20:09:11.178820900 -0600
+@@ -0,0 +1,149 @@
++/*
++    KSysGuard, the KDE System Guard
++
++    Copyright (c) 1999, 2000 Chris Schlaeger <cs@kde.org>
++
++    This program is free software; you can redistribute it and/or
++    modify it under the terms of version 2 of the GNU General Public
++    License as published by the Free Software Foundation.
++
++    This program is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++    GNU General Public License for more details.
++
++    You should have received a copy of the GNU General Public License
++    along with this program; if not, write to the Free Software
++    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
++
++*/
++
++#include <sys/types.h>
++#include <sys/stat.h>
++#include <fcntl.h>
++#include <unistd.h>
++#include <stdio.h>
++
++#include "ksysguardd.h"
++#include "Command.h"
++
++#include "loadavg.h"
++
++static int LoadAvgOK = 0;
++static double LoadAvg1, LoadAvg5, LoadAvg15;
++
++#define LOADAVGBUFSIZE 128
++static char LoadAvgBuf[ LOADAVGBUFSIZE ];
++static int Dirty = 0;
++
++static void processLoadAvg( void )
++{
++  sscanf( LoadAvgBuf, "%lf %lf %lf", &LoadAvg1, &LoadAvg5, &LoadAvg15 );
++  Dirty = 0;
++}
++
++/*
++================================ public part =================================
++*/
++
++void initLoadAvg( struct SensorModul* sm )
++{
++  if ( updateLoadAvg() < 0 ) {
++    LoadAvgOK = -1;
++    return;
++  } else
++    LoadAvgOK = 1;
++
++  registerMonitor( "cpu/system/loadavg1", "float", printLoadAvg1, printLoadAvg1Info, sm );
++  registerMonitor( "cpu/system/loadavg5", "float", printLoadAvg5, printLoadAvg5Info, sm );
++  registerMonitor( "cpu/system/loadavg15", "float", printLoadAvg15, printLoadAvg15Info, sm );
++
++  /* Register some legacy monitors. These will be hidden from the module list. */
++  registerLegacyMonitor( "cpu/loadavg1", "float", printLoadAvg1, printLoadAvg1Info, sm );
++  registerLegacyMonitor( "cpu/loadavg5", "float", printLoadAvg5, printLoadAvg5Info, sm );
++  registerLegacyMonitor( "cpu/loadavg15", "float", printLoadAvg15, printLoadAvg15Info, sm );
++}
++
++void exitLoadAvg( void )
++{
++  LoadAvgOK = -1;
++}
++
++int updateLoadAvg( void )
++{
++  size_t n;
++  int fd;
++
++  if ( LoadAvgOK < 0 )
++    return -1;
++
++  if ( ( fd = open( "/proc/loadavg", O_RDONLY ) ) < 0 ) {
++    if ( LoadAvgOK != 0 )
++      print_error( "Cannot open file \'/proc/loadavg\'!\n"
++                   "The kernel needs to be compiled with support\n"
++                   "for /proc file system enabled!\n" );
++    return -1;
++  }
++
++  n = read( fd, LoadAvgBuf, LOADAVGBUFSIZE - 1 );
++  if ( n == LOADAVGBUFSIZE - 1 || n <= 0 ) {
++    log_error( "Internal buffer too small to read \'/proc/loadavg\'" );
++
++    close( fd );
++    return -1;
++  }
++
++  close( fd );
++  LoadAvgBuf[ n ] = '\0';
++  Dirty = 1;
++
++  return 0;
++}
++
++void printLoadAvg1( const char* cmd )
++{
++  (void)cmd;
++
++  if ( Dirty )
++    processLoadAvg();
++
++  output( "%f\n", LoadAvg1 );
++}
++
++void printLoadAvg1Info( const char* cmd )
++{
++  (void)cmd;
++  output( "Load average 1 min\t0\t0\t\n" );
++}
++
++void printLoadAvg5( const char* cmd )
++{
++  (void)cmd;
++
++  if ( Dirty )
++    processLoadAvg();
++
++  output( "%f\n", LoadAvg5 );
++}
++
++void printLoadAvg5Info( const char* cmd )
++{
++  (void)cmd;
++  output( "Load average 5 min\t0\t0\t\n" );
++}
++
++void printLoadAvg15( const char* cmd )
++{
++  (void)cmd;
++
++  if ( Dirty )
++    processLoadAvg();
++
++  output( "%f\n", LoadAvg15 );
++}
++
++void printLoadAvg15Info( const char* cmd )
++{
++  (void)cmd;
++  output( "Load average 15 min\t0\t0\t\n" );
++}
+--- origsrc/kdebase-workspace-4.3.5/ksysguard/ksysguardd/Cygwin/loadavg.h	1969-12-31 18:00:00.000000000 -0600
++++ src/kdebase-workspace-4.3.5/ksysguard/ksysguardd/Cygwin/loadavg.h	2010-02-01 20:09:11.179820900 -0600
+@@ -0,0 +1,36 @@
++/*
++    KSysGuard, the KDE System Guard
++
++    Copyright (c) 1999, 2000 Chris Schlaeger <cs@kde.org>
++
++    This program is free software; you can redistribute it and/or
++    modify it under the terms of version 2 of the GNU General Public
++    License as published by the Free Software Foundation.
++
++    This program is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++    GNU General Public License for more details.
++
++    You should have received a copy of the GNU General Public License
++    along with this program; if not, write to the Free Software
++    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
++
++*/
++
++#ifndef KSG_LOADAVG_H
++#define KSG_LOADAVG_H
++
++void initLoadAvg( struct SensorModul* );
++void exitLoadAvg( void );
++
++int updateLoadAvg( void );
++
++void printLoadAvg1( const char* );
++void printLoadAvg1Info( const char* );
++void printLoadAvg5( const char* );
++void printLoadAvg5Info( const char* );
++void printLoadAvg15( const char* );
++void printLoadAvg15Info( const char* );
++
++#endif
+--- origsrc/kdebase-workspace-4.3.5/ksysguard/ksysguardd/Cygwin/logfile.c	1969-12-31 18:00:00.000000000 -0600
++++ src/kdebase-workspace-4.3.5/ksysguard/ksysguardd/Cygwin/logfile.c	2010-02-01 20:09:11.181821100 -0600
+@@ -0,0 +1,172 @@
++/*
++    KSysGuard, the KDE System Guard
++
++    Copyright (c) 2003 Tobias Koenig <tokoe@kde.org>
++
++    This program is free software; you can redistribute it and/or
++    modify it under the terms of version 2 of the GNU General Public
++    License as published by the Free Software Foundation.
++
++    This program is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++    GNU General Public License for more details.
++
++    You should have received a copy of the GNU General Public License
++    along with this program; if not, write to the Free Software
++    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
++
++*/
++
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++
++#include "Command.h"
++#include "ccont.h"
++#include "conf.h"
++#include "ksysguardd.h"
++
++#include "logfile.h"
++
++static CONTAINER LogFiles = 0;
++static unsigned long counter = 1;
++
++typedef struct {
++  char name[ 256 ];
++  FILE* fh;
++  unsigned long id;
++} LogFileEntry;
++
++extern CONTAINER LogFileList;
++
++/*
++================================ public part =================================
++*/
++
++void initLogFile( struct SensorModul* sm )
++{
++  char monitor[ 1024 ];
++  ConfigLogFile *entry;
++
++  registerCommand( "logfile_register", registerLogFile );
++  registerCommand( "logfile_unregister", unregisterLogFile );
++  registerCommand( "logfile_registered", printRegistered );
++
++  for ( entry = first_ctnr( LogFileList ); entry; entry = next_ctnr( LogFileList ) ) {
++    FILE* fp;
++    /* Register the log file only if we can actually read the file. */
++    if ( ( fp = fopen( entry->path, "r" ) ) != NULL ) {
++      snprintf( monitor, 1024, "logfiles/%s", entry->name );
++      registerMonitor( monitor, "logfile", printLogFile, printLogFileInfo, sm );
++      fclose( fp );
++    }
++  }
++
++  LogFiles = new_ctnr();
++}
++
++void exitLogFile( void )
++{
++  destr_ctnr( LogFiles, free );
++}
++
++void printLogFile( const char* cmd )
++{
++  char line[ 1024 ];
++  unsigned long id;
++  LogFileEntry *entry;
++
++  sscanf( cmd, "%*s %lu", &id );
++
++  for ( entry = first_ctnr( LogFiles ); entry; entry = next_ctnr( LogFiles ) ) {
++    if ( entry->id == id ) {
++      while ( fgets( line, 1024, entry->fh ) != NULL )
++        output( "%s", line );
++
++      /* delete the EOF */
++      clearerr( entry->fh );
++    }
++  }
++
++  output( "\n" );
++}
++
++void printLogFileInfo( const char* cmd )
++{
++	(void)cmd;
++  output( "LogFile\n" );
++}
++
++void registerLogFile( const char* cmd )
++{
++  char name[ 257 ];
++  FILE* file;
++  LogFileEntry *entry;
++  int i;
++
++  memset( name, 0, sizeof( name ) );
++  sscanf( cmd, "%*s %256s", name );
++
++  for ( i = 0; i < level_ctnr( LogFileList ); i++ ) {
++    ConfigLogFile *conf = get_ctnr( LogFileList, i );
++    if ( !strcmp( conf->name, name ) ) {
++      if ( ( file = fopen( conf->path, "r" ) ) == NULL ) {
++        print_error( "fopen()" );
++        output( "0\n" );
++        return;
++      }
++
++      fseek( file, 0, SEEK_END );
++
++      if ( ( entry = (LogFileEntry*)malloc( sizeof( LogFileEntry ) ) ) == NULL ) {
++        print_error( "malloc()" );
++        output( "0\n" );
++        return;
++      }
++
++      entry->fh = file;
++      strncpy( entry->name, conf->name, 256 );
++      entry->id = counter;
++
++      push_ctnr( LogFiles, entry );
++
++      output( "%lu\n", counter );
++      counter++;
++
++      return;
++    }
++  }
++
++  output( "\n" );
++}
++
++void unregisterLogFile( const char* cmd )
++{
++  unsigned long id;
++  LogFileEntry *entry;
++
++  sscanf( cmd, "%*s %lu", &id );
++
++  for ( entry = first_ctnr( LogFiles ); entry; entry = next_ctnr( LogFiles ) ) {
++    if ( entry->id == id ) {
++      fclose( entry->fh );
++      free( remove_ctnr( LogFiles ) );
++      output( "\n" );
++      return;
++    }
++  }
++
++  output( "\n" );
++}
++
++void printRegistered( const char* cmd )
++{
++  LogFileEntry *entry;
++
++  (void)cmd;
++  for ( entry = first_ctnr( LogFiles ); entry; entry = next_ctnr( LogFiles ) )
++    output( "%s:%lu\n", entry->name, entry->id );
++
++  output( "\n" );
++}
+--- origsrc/kdebase-workspace-4.3.5/ksysguard/ksysguardd/Cygwin/logfile.h	1969-12-31 18:00:00.000000000 -0600
++++ src/kdebase-workspace-4.3.5/ksysguard/ksysguardd/Cygwin/logfile.h	2010-02-01 20:09:11.183821200 -0600
+@@ -0,0 +1,36 @@
++/*
++    KSysGuard, the KDE System Guard
++
++    Copyright (c) 2003 Tobias Koenig <tokoe@kde.org>
++
++    This program is free software; you can redistribute it and/or
++    modify it under the terms of version 2 of the GNU General Public
++    License as published by the Free Software Foundation.
++
++    This program is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++    GNU General Public License for more details.
++
++    You should have received a copy of the GNU General Public License
++    along with this program; if not, write to the Free Software
++    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
++
++*/
++
++#ifndef KSG_LOGFILE_H
++#define KSG_LOGFILE_H
++
++void initLogFile( struct SensorModul* );
++void exitLogFile( void );
++
++void printLogFile( const char* );
++void printLogFileInfo( const char* );
++
++void registerLogFile( const char* );
++void unregisterLogFile( const char* );
++
++/* debug command */
++void printRegistered( const char* );
++
++#endif
+--- origsrc/kdebase-workspace-4.3.5/ksysguard/ksysguardd/Cygwin/stat.c	1969-12-31 18:00:00.000000000 -0600
++++ src/kdebase-workspace-4.3.5/ksysguard/ksysguardd/Cygwin/stat.c	2010-02-01 20:09:11.203822300 -0600
+@@ -0,0 +1,1107 @@
++/*
++	KSysGuard, the KDE System Guard
++	
++	Copyright (c) 1999, 2000 Chris Schlaeger <cs@kde.org>
++	
++	This program is free software; you can redistribute it and/or
++	modify it under the terms of version 2 of the GNU General Public
++	License as published by the Free Software Foundation.
++	
++	This program is distributed in the hope that it will be useful,
++	but WITHOUT ANY WARRANTY; without even the implied warranty of
++	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++	GNU General Public License for more details.
++	
++	You should have received a copy of the GNU General Public License
++	along with this program; if not, write to the Free Software
++	Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
++*/
++/*
++ * stat.c is used to read from /proc/[pid]/stat
++*/
++
++#include <sys/types.h>
++#include <sys/stat.h>
++#include <sys/time.h>
++#include <fcntl.h>
++#include <unistd.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++#include <ctype.h>
++
++#include "Command.h"
++#include "ksysguardd.h"
++
++#include "stat.h"
++
++typedef struct {
++	/* A CPU can be loaded with user processes, reniced processes and
++	* system processes. Unused processing time is called idle load.
++	* These variable store the percentage of each load type. */
++	float userLoad;
++	float niceLoad;
++	float sysLoad;
++	float idleLoad;
++	float waitLoad;
++	
++	/* To calculate the loads we need to remember the tick values for each
++	* load type. */
++	unsigned long userTicks;
++	unsigned long niceTicks;
++	unsigned long sysTicks;
++	unsigned long idleTicks;
++	unsigned long waitTicks;
++} CPULoadInfo;
++
++typedef struct {
++	unsigned long delta;
++	unsigned long old;
++} DiskLoadSample;
++
++typedef struct {
++	/* 5 types of samples are taken:
++	total, rio, wio, rBlk, wBlk */
++	DiskLoadSample s[ 5 ];
++} DiskLoadInfo;
++
++typedef struct DiskIOInfo {
++	int major;
++	int minor;
++	char* devname;
++	
++	int alive;
++	DiskLoadSample total;
++	DiskLoadSample rio;
++	DiskLoadSample wio;
++	DiskLoadSample rblk;
++	DiskLoadSample wblk;
++	struct DiskIOInfo* next;
++} DiskIOInfo;
++
++#define STATBUFSIZE (32 * 1024)
++#define DISKDEVNAMELEN 16
++
++static char StatBuf[ STATBUFSIZE ];
++static char VmStatBuf[ STATBUFSIZE ];
++static int Dirty = 0;
++
++/* We have observed deviations of up to 5% in the accuracy of the timer
++* interrupts. So we try to measure the interrupt interval and use this
++* value to calculate timing dependant values. */
++static float timeInterval = 0;
++static struct timeval lastSampling;
++static struct timeval currSampling;
++static struct SensorModul* StatSM;
++
++static CPULoadInfo CPULoad;
++static CPULoadInfo* SMPLoad = 0;
++static unsigned CPUCount = 0;
++static DiskLoadInfo* DiskLoad = 0;
++static unsigned DiskCount = 0;
++static DiskIOInfo* DiskIO = 0;
++static unsigned long PageIn = 0;
++static unsigned long OldPageIn = 0;
++static unsigned long PageOut = 0;
++static unsigned long OldPageOut = 0;
++static unsigned long Ctxt = 0;
++static unsigned long OldCtxt = 0;
++static unsigned int NumOfInts = 0;
++static unsigned long* OldIntr = 0;
++static unsigned long* Intr = 0;
++
++static int initStatDisk( char* tag, char* buf, const char* label, const char* shortLabel,
++			int idx, cmdExecutor ex, cmdExecutor iq );
++static void updateCPULoad( const char* line, CPULoadInfo* load );
++static int process24Disk( char* tag, char* buf, const char* label, int idx );
++static void process24Stat( void );
++static int process24DiskIO( const char* buf );
++static void cleanup24DiskList( void );
++	
++static int initStatDisk( char* tag, char* buf, const char* label,
++			const char* shortLabel, int idx, cmdExecutor ex, cmdExecutor iq )
++{
++	char sensorName[ 128 ];
++	
++	gettimeofday( &lastSampling, 0 );
++	
++	if ( strcmp( label, tag ) == 0 ) {
++		unsigned int i;
++		buf = buf + strlen( label ) + 1;
++		
++		for ( i = 0; i < DiskCount; ++i ) {
++			sscanf( buf, "%lu", &DiskLoad[ i ].s[ idx ].old );
++			while ( *buf && isblank( *buf++ ) );
++			while ( *buf && isdigit( *buf++ ) );
++			sprintf( sensorName, "disk/disk%d/%s", i, shortLabel );
++			registerMonitor( sensorName, "float", ex, iq, StatSM );
++		}
++		
++		return 1;
++	}
++	
++	return 0;
++}
++
++/**
++ * updateCPULoad
++ *
++ * Parses the total cpu status line from /proc/stat
++ */
++static void updateCPULoad( const char* line, CPULoadInfo* load ) {
++	unsigned long currUserTicks, currSysTicks, currNiceTicks;
++	unsigned long currIdleTicks, currWaitTicks, totalTicks;
++	
++	sscanf( line, "%*s %lu %lu %lu %lu %lu", &currUserTicks, &currNiceTicks,
++		&currSysTicks, &currIdleTicks, &currWaitTicks );
++	
++	totalTicks = ( currUserTicks - load->userTicks ) +
++		( currSysTicks - load->sysTicks ) +
++		( currNiceTicks - load->niceTicks ) +
++		( currIdleTicks - load->idleTicks ) +
++		( currWaitTicks - load->waitTicks );
++	
++	if ( totalTicks > 10 ) {
++		load->userLoad = ( 100.0 * ( currUserTicks - load->userTicks ) ) / totalTicks;
++		load->sysLoad = ( 100.0 * ( currSysTicks - load->sysTicks ) ) / totalTicks;
++		load->niceLoad = ( 100.0 * ( currNiceTicks - load->niceTicks ) ) / totalTicks;
++		load->idleLoad = ( 100.0 * ( currIdleTicks - load->idleTicks ) ) / totalTicks;
++		load->waitLoad = ( 100.0 * ( currWaitTicks - load->waitTicks ) ) / totalTicks;
++	}
++	else
++		load->userLoad = load->sysLoad = load->niceLoad = load->idleLoad = load->waitLoad = 0.0;
++		
++	load->userTicks = currUserTicks;
++	load->sysTicks = currSysTicks;
++	load->niceTicks = currNiceTicks;
++	load->idleTicks = currIdleTicks;
++	load->waitTicks = currWaitTicks;
++}
++	
++static int process24Disk( char* tag, char* buf, const char* label, int idx ) {
++	if ( strcmp( label, tag ) == 0 ) {
++		unsigned long val;
++		unsigned int i;
++		buf = buf + strlen( label ) + 1;
++		
++		for ( i = 0; i < DiskCount; ++i ) {
++			sscanf( buf, "%lu", &val );
++			while ( *buf && isblank( *buf++ ) );
++			while ( *buf && isdigit( *buf++ ) );
++			DiskLoad[ i ].s[ idx ].delta = val - DiskLoad[ i ].s[ idx ].old;
++			DiskLoad[ i ].s[ idx ].old = val;
++		}
++		
++		return 1;
++	}
++	
++	return 0;
++}
++
++static int process24DiskIO( const char* buf ) {
++	/* Process disk_io lines as provided by 2.4.x kernels.
++	* disk_io: (2,0):(3,3,6,0,0) (3,0):(1413012,511622,12155382,901390,26486215) */
++	int major, minor;
++	unsigned long total, rblk, rio, wblk, wio;
++	DiskIOInfo* ptr = DiskIO;
++	DiskIOInfo* last = 0;
++	char sensorName[ 128 ];
++	const char* p;
++	
++	p = buf + strlen( "disk_io: " );
++	while ( p && *p ) {
++		if ( sscanf( p, "(%d,%d):(%lu,%lu,%lu,%lu,%lu)", &major, &minor,
++				&total, &rio, &rblk, &wio, &wblk ) != 7 )
++			return -1;
++		
++		last = 0;
++		ptr = DiskIO;
++		while ( ptr ) {
++			if ( ptr->major == major && ptr->minor == minor ) {
++				/* The IO device has already been registered. */
++				ptr->total.delta = total - ptr->total.old;
++				ptr->total.old = total;
++				ptr->rio.delta = rio - ptr->rio.old;
++				ptr->rio.old = rio;
++				ptr->wio.delta = wio - ptr->wio.old;
++				ptr->wio.old = wio;
++				ptr->rblk.delta = rblk - ptr->rblk.old;
++				ptr->rblk.old = rblk;
++				ptr->wblk.delta = wblk - ptr->wblk.old;
++				ptr->wblk.old = wblk;
++				ptr->alive = 1;
++				break;
++			}
++
++			last = ptr;
++			ptr = ptr->next;
++		}
++		
++		if ( !ptr ) {
++			/* The IO device has not been registered yet. We need to add it. */
++			ptr = (DiskIOInfo*)malloc( sizeof( DiskIOInfo ) );
++			ptr->major = major;
++			ptr->minor = minor;
++			
++			/* 2.6 gives us a nice device name. On 2.4 we get nothing */
++			ptr->devname = (char *)malloc( DISKDEVNAMELEN );
++			memset( ptr->devname, 0, DISKDEVNAMELEN );
++			
++			ptr->total.delta = 0;
++			ptr->total.old = total;
++			ptr->rio.delta = 0;
++			ptr->rio.old = rio;
++			ptr->wio.delta = 0;
++			ptr->wio.old = wio;
++			ptr->rblk.delta = 0;
++			ptr->rblk.old = rblk;
++			ptr->wblk.delta = 0;
++			ptr->wblk.old = wblk;
++			ptr->alive = 1;
++			ptr->next = 0;
++			if ( last ) {
++				/* Append new entry at end of list. */
++				last->next = ptr;
++			}
++			else {
++				/* List is empty, so we insert the fist element into the list. */
++				DiskIO = ptr;
++			}
++			
++			sprintf( sensorName, "disk/%s_(%d:%d)24/total", ptr->devname, major, minor );
++			registerMonitor( sensorName, "float", print24DiskIO, print24DiskIOInfo, StatSM );
++			sprintf( sensorName, "disk/%s_(%d:%d)24/rio", ptr->devname, major, minor );
++			registerMonitor( sensorName, "float", print24DiskIO, print24DiskIOInfo, StatSM );
++			sprintf( sensorName, "disk/%s_(%d:%d)24/wio", ptr->devname, major, minor );
++			registerMonitor( sensorName, "float", print24DiskIO, print24DiskIOInfo, StatSM );
++			sprintf( sensorName, "disk/%s_(%d:%d)24/rblk", ptr->devname, major, minor );
++			registerMonitor( sensorName, "float", print24DiskIO, print24DiskIOInfo, StatSM );
++			sprintf( sensorName, "disk/%s_(%d:%d)24/wblk", ptr->devname, major, minor );
++			registerMonitor( sensorName, "float", print24DiskIO, print24DiskIOInfo, StatSM );
++		}
++
++		/* Move p after the second ')'. We can safely assume that
++		* those two ')' exist. */
++		p = strchr( p, ')' ) + 1;
++		p = strchr( p, ')' ) + 1;
++		if ( p && *p )
++			p = strchr( p, '(' );
++	}
++	
++	return 0;
++}
++
++static void cleanup24DiskList( void ) {
++	DiskIOInfo* ptr = DiskIO;
++	DiskIOInfo* last = 0;
++	
++	while ( ptr ) {
++		if ( ptr->alive == 0 ) {
++			DiskIOInfo* newPtr;
++			char sensorName[ 128 ];
++			
++			/* Disk device has disappeared. We have to remove it from
++			* the list and unregister the monitors. */
++			sprintf( sensorName, "disk/%s_(%d:%d)24/total", ptr->devname, ptr->major, ptr->minor );
++			removeMonitor( sensorName );
++			sprintf( sensorName, "disk/%s_(%d:%d)24/rio", ptr->devname, ptr->major, ptr->minor );
++			removeMonitor( sensorName );
++			sprintf( sensorName, "disk/%s_(%d:%d)24/wio", ptr->devname, ptr->major, ptr->minor );
++			removeMonitor( sensorName );
++			sprintf( sensorName, "disk/%s_(%d:%d)24/rblk", ptr->devname, ptr->major, ptr->minor );
++			removeMonitor( sensorName );
++			sprintf( sensorName, "disk/%s_(%d:%d)24/wblk", ptr->devname, ptr->major, ptr->minor );
++			removeMonitor( sensorName );
++			if ( last ) {
++				last->next = ptr->next;
++				newPtr = ptr->next;
++			}
++			else {
++				DiskIO = ptr->next;
++				newPtr = DiskIO;
++				last = 0;
++			}
++			
++			free ( ptr );
++			ptr = newPtr;
++		}
++		else {
++			ptr->alive = 0;
++			last = ptr;
++			ptr = ptr->next;
++		}
++	}
++}
++
++static void process24Stat( void ) {
++	char format[ 32 ];
++	char tagFormat[ 16 ];
++	char buf[ 1024 ];
++	char tag[ 32 ];
++	char* statBufP = StatBuf;
++	char* vmstatBufP = VmStatBuf;
++	
++	sprintf( format, "%%%d[^\n]\n", (int)sizeof( buf ) - 1 );
++	sprintf( tagFormat, "%%%ds", (int)sizeof( tag ) - 1 );
++	
++	while ( sscanf( statBufP, format, buf ) == 1 ) {
++		buf[ sizeof( buf ) - 1 ] = '\0';
++		statBufP += strlen( buf ) + 1;  /* move statBufP to next line */
++		sscanf( buf, tagFormat, tag );
++		
++		if ( strcmp( "cpu", tag ) == 0 ) {
++			/* Total CPU load */
++			updateCPULoad( buf, &CPULoad );
++		}
++		else if ( strncmp( "cpu", tag, 3 ) == 0 ) {
++			/* Load for each SMP CPU */
++			int id;
++			sscanf( tag + 3, "%d", &id );
++			updateCPULoad( buf, &SMPLoad[ id ]  );
++		}
++		else if ( process24Disk( tag, buf, "disk", 0 ) ) {
++		}
++		else if ( process24Disk( tag, buf, "disk_rio", 1 ) ) {
++		}
++		else if ( process24Disk( tag, buf, "disk_wio", 2 ) ) {
++		}
++		else if ( process24Disk( tag, buf, "disk_rblk", 3 ) ) {
++		}
++		else if ( process24Disk( tag, buf, "disk_wblk", 4 ) ) {
++		}
++		else if ( strcmp( "disk_io:", tag ) == 0 ) {
++			process24DiskIO( buf );
++		}
++		else if ( strcmp( "page", tag ) == 0 ) {
++			unsigned long v1, v2;
++			sscanf( buf + 5, "%lu %lu", &v1, &v2 );
++			PageIn = v1 - OldPageIn;
++			OldPageIn = v1;
++			PageOut = v2 - OldPageOut;
++			OldPageOut = v2;
++		}
++		else if ( strcmp( "intr", tag ) == 0 ) {
++			unsigned int i = 0;
++			char* p = buf + 5;
++			
++			for ( i = 0; i < NumOfInts; i++ ) {
++				unsigned long val;
++			
++				sscanf( p, "%lu", &val );
++				Intr[ i ] = val - OldIntr[ i ];
++				OldIntr[ i ] = val;
++				while ( *p && *p != ' ' )
++					p++;
++				while ( *p && *p == ' ' )
++					p++;
++			}
++		} else if ( strcmp( "ctxt", tag ) == 0 ) {
++			unsigned long val;
++			
++			sscanf( buf + 5, "%lu", &val );
++			Ctxt = val - OldCtxt;
++			OldCtxt = val;
++		}
++	}
++	
++	/* Read Linux 2.5.x /proc/vmstat */
++	while ( sscanf( vmstatBufP, format, buf ) == 1 ) {
++		buf[ sizeof( buf ) - 1 ] = '\0';
++		vmstatBufP += strlen( buf ) + 1;  /* move vmstatBufP to next line */
++		sscanf( buf, tagFormat, tag );
++		
++		if ( strcmp( "pgpgin", tag ) == 0 ) {
++			unsigned long v1;
++			sscanf( buf + 7, "%lu", &v1 );
++			PageIn = v1 - OldPageIn;
++			OldPageIn = v1;
++		}
++		else if ( strcmp( "pgpgout", tag ) == 0 ) {
++			unsigned long v1;
++			sscanf( buf + 7, "%lu", &v1 );
++			PageOut = v1 - OldPageOut;
++			OldPageOut = v1;
++		}
++	}
++	
++	/* save exact time inverval between this and the last read of /proc/stat */
++	timeInterval = currSampling.tv_sec - lastSampling.tv_sec +
++			( currSampling.tv_usec - lastSampling.tv_usec ) / 1000000.0;
++	lastSampling = currSampling;
++	
++	cleanup24DiskList();
++	
++	Dirty = 0;
++}
++
++/*
++================================ public part =================================
++*/
++
++void initStat( struct SensorModul* sm ) {
++	/* The CPU load is calculated from the values in /proc/stat. The cpu
++	* entry contains 7 counters. These counters count the number of ticks
++	* the system has spend on user processes, system processes, nice
++	* processes, idle and IO-wait time, hard and soft interrupts.
++	*
++	* SMP systems will have cpu1 to cpuN lines right after the cpu info. The
++	* format is identical to cpu and reports the information for each cpu.
++	* Linux kernels <= 2.0 do not provide this information!
++	*
++	* The /proc/stat file looks like this:
++	*
++	* cpu  <user> <nice> <system> <idling> <waiting> <hardinterrupt> <softinterrupt>
++	* disk 7797 0 0 0
++	* disk_rio 6889 0 0 0
++	* disk_wio 908 0 0 0
++	* disk_rblk 13775 0 0 0
++	* disk_wblk 1816 0 0 0
++	* page 27575 1330
++	* swap 1 0
++	* intr 50444 38672 2557 0 0 0 0 2 0 2 0 0 3 1429 1 7778 0
++	* ctxt 54155
++	* btime 917379184
++	* processes 347 
++	*
++	* Linux kernel >= 2.4.0 have one or more disk_io: lines instead of
++	* the disk_* lines.
++	*
++	* Linux kernel >= 2.6.x(?) have disk I/O stats in /proc/diskstats
++	* and no disk relevant lines are found in /proc/stat
++	*/
++	
++	char format[ 32 ];
++	char tagFormat[ 16 ];
++	char buf[ 1024 ];
++	char tag[ 32 ];
++	char* statBufP = StatBuf;
++	char* vmstatBufP = VmStatBuf;
++	
++	StatSM = sm;
++	
++	updateStat();
++	
++	sprintf( format, "%%%d[^\n]\n", (int)sizeof( buf ) - 1 );
++	sprintf( tagFormat, "%%%ds", (int)sizeof( tag ) - 1 );
++	
++	while ( sscanf( statBufP, format, buf ) == 1 ) {
++		buf[ sizeof( buf ) - 1 ] = '\0';
++		statBufP += strlen( buf ) + 1;  /* move statBufP to next line */
++		sscanf( buf, tagFormat, tag );
++		
++		if ( strcmp( "cpu", tag ) == 0 ) {
++			/* Total CPU load */
++			registerMonitor( "cpu/system/user", "float", printCPUUser, printCPUUserInfo, StatSM );
++			registerMonitor( "cpu/system/nice", "float", printCPUNice, printCPUNiceInfo, StatSM );
++			registerMonitor( "cpu/system/sys", "float", printCPUSys, printCPUSysInfo, StatSM );
++			registerMonitor( "cpu/system/TotalLoad", "float", printCPUTotalLoad, printCPUTotalLoadInfo, StatSM );
++			registerMonitor( "cpu/system/idle", "float", printCPUIdle, printCPUIdleInfo, StatSM );
++			registerMonitor( "cpu/system/wait", "float", printCPUWait, printCPUWaitInfo, StatSM );
++
++			/* Monitor names changed from kde3 => kde4. Remain compatible with legacy requests when possible. */
++			registerLegacyMonitor( "cpu/user", "float", printCPUUser, printCPUUserInfo, StatSM );
++			registerLegacyMonitor( "cpu/nice", "float", printCPUNice, printCPUNiceInfo, StatSM );
++			registerLegacyMonitor( "cpu/sys", "float", printCPUSys, printCPUSysInfo, StatSM );
++			registerLegacyMonitor( "cpu/TotalLoad", "float", printCPUTotalLoad, printCPUTotalLoadInfo, StatSM );
++			registerLegacyMonitor( "cpu/idle", "float", printCPUIdle, printCPUIdleInfo, StatSM );
++			registerLegacyMonitor( "cpu/wait", "float", printCPUWait, printCPUWaitInfo, StatSM );
++		}
++		else if ( strncmp( "cpu", tag, 3 ) == 0 ) {
++			char cmdName[ 24 ];
++			/* Load for each SMP CPU */
++			int id;
++			
++			sscanf( tag + 3, "%d", &id );
++			CPUCount++;
++			sprintf( cmdName, "cpu/cpu%d/user", id );
++			registerMonitor( cmdName, "float", printCPUxUser, printCPUxUserInfo, StatSM );
++			sprintf( cmdName, "cpu/cpu%d/nice", id );
++			registerMonitor( cmdName, "float", printCPUxNice, printCPUxNiceInfo, StatSM );
++			sprintf( cmdName, "cpu/cpu%d/sys", id );
++			registerMonitor( cmdName, "float", printCPUxSys, printCPUxSysInfo, StatSM );
++			sprintf( cmdName, "cpu/cpu%d/TotalLoad", id );
++			registerMonitor( cmdName, "float", printCPUxTotalLoad, printCPUxTotalLoadInfo, StatSM );
++			sprintf( cmdName, "cpu/cpu%d/idle", id );
++			registerMonitor( cmdName, "float", printCPUxIdle, printCPUxIdleInfo, StatSM );
++			sprintf( cmdName, "cpu/cpu%d/wait", id );
++			registerMonitor( cmdName, "float", printCPUxWait, printCPUxWaitInfo, StatSM );
++		}
++		else if ( strcmp( "disk", tag ) == 0 ) {
++			unsigned long val;
++			char* b = buf + 5;
++			
++			/* Count the number of registered disks */
++			for ( DiskCount = 0; *b && sscanf( b, "%lu", &val ) == 1; DiskCount++ ) {
++				while ( *b && isblank( *b++ ) );
++				while ( *b && isdigit( *b++ ) );
++			}
++			
++			if ( DiskCount > 0 )
++				DiskLoad = (DiskLoadInfo*)malloc( sizeof( DiskLoadInfo ) * DiskCount );
++
++			initStatDisk( tag, buf, "disk", "disk", 0, print24DiskTotal, print24DiskTotalInfo );
++		}
++		else if ( initStatDisk( tag, buf, "disk_rio", "rio", 1, print24DiskRIO, print24DiskRIOInfo ) );
++		else if ( initStatDisk( tag, buf, "disk_wio", "wio", 2, print24DiskWIO, print24DiskWIOInfo ) );
++		else if ( initStatDisk( tag, buf, "disk_rblk", "rblk", 3, print24DiskRBlk, print24DiskRBlkInfo ) );
++		else if ( initStatDisk( tag, buf, "disk_wblk", "wblk", 4, print24DiskWBlk, print24DiskWBlkInfo ) );
++		else if ( strcmp( "disk_io:", tag ) == 0 )
++			process24DiskIO( buf );
++		else if ( strcmp( "page", tag ) == 0 ) {
++			sscanf( buf + 5, "%lu %lu", &OldPageIn, &OldPageOut );
++			registerMonitor( "cpu/pageIn", "float", printPageIn, printPageInInfo, StatSM );
++			registerMonitor( "cpu/pageOut", "float", printPageOut, printPageOutInfo, StatSM );
++		}
++		else if ( strcmp( "intr", tag ) == 0 ) {
++			unsigned int i;
++			char cmdName[ 32 ];
++			char* p = buf + 5;
++			
++			/* Count the number of listed values in the intr line. */
++			NumOfInts = 0;
++			while ( *p )
++				if ( *p++ == ' ' )
++					NumOfInts++;
++			
++			/* It looks like anything above 24 is always 0. So let's just
++			* ignore this for the time being. */
++			if ( NumOfInts > 25 )
++				NumOfInts = 25;
++			OldIntr = (unsigned long*)malloc( NumOfInts * sizeof( unsigned long ) );
++			Intr = (unsigned long*)malloc( NumOfInts * sizeof( unsigned long ) );
++			i = 0;
++			p = buf + 5;
++			for ( i = 0; p && i < NumOfInts; i++ ) {
++				sscanf( p, "%lu", &OldIntr[ i ] );
++				while ( *p && *p != ' ' )
++					p++;
++				while ( *p && *p == ' ' )
++					p++;
++				sprintf( cmdName, "cpu/interrupts/int%02d", i );
++				registerMonitor( cmdName, "float", printInterruptx, printInterruptxInfo, StatSM );
++			}
++		}
++		else if ( strcmp( "ctxt", tag ) == 0 ) {
++			sscanf( buf + 5, "%lu", &OldCtxt );
++			registerMonitor( "cpu/context", "float", printCtxt, printCtxtInfo, StatSM );
++		}
++	}
++	
++	while ( sscanf( vmstatBufP, format, buf ) == 1 ) {
++		buf[ sizeof( buf ) - 1 ] = '\0';
++		vmstatBufP += strlen( buf ) + 1;  /* move vmstatBufP to next line */
++		sscanf( buf, tagFormat, tag );
++		
++		if ( strcmp( "pgpgin", tag ) == 0 ) {
++			sscanf( buf + 7, "%lu", &OldPageIn );
++			registerMonitor( "cpu/pageIn", "float", printPageIn, printPageInInfo, StatSM );
++		}
++		else if ( strcmp( "pgpgout", tag ) == 0 ) {
++			sscanf( buf + 7, "%lu", &OldPageOut );
++			registerMonitor( "cpu/pageOut", "float", printPageOut, printPageOutInfo, StatSM );
++		}
++	}
++	
++	if ( CPUCount > 0 )
++		SMPLoad = (CPULoadInfo*)malloc( sizeof( CPULoadInfo ) * CPUCount );
++	
++	/* Call process24Stat to eliminate initial peek values. */
++	process24Stat();
++}
++	
++void exitStat( void ) {
++	free( DiskLoad );
++	DiskLoad = 0;
++	
++	free( SMPLoad );
++	SMPLoad = 0;
++	
++	free( OldIntr );
++	OldIntr = 0;
++	
++	free( Intr );
++	Intr = 0;
++	
++	removeMonitor("cpu/system/user");
++	removeMonitor("cpu/system/nice");
++	removeMonitor("cpu/system/sys");
++	removeMonitor("cpu/system/idle");
++	
++	/* Todo: Dynamically registered monitors (per cpu, per disk) are not removed yet) */
++	
++	/* These were registered as legacy monitors */
++	removeMonitor("cpu/user");
++	removeMonitor("cpu/nice");
++	removeMonitor("cpu/sys");
++	removeMonitor("cpu/idle");
++}
++	
++int updateStat( void ) {
++	size_t n;
++	int fd;
++	
++	gettimeofday( &currSampling, 0 );
++	Dirty = 1;
++	
++	StatBuf[ 0 ] = '\0';
++	if ( ( fd = open( "/proc/stat", O_RDONLY ) ) < 0 ) {
++		print_error( "Cannot open file \'/proc/stat\'!\n"
++				"The kernel needs to be compiled with support\n"
++				"for /proc file system enabled!\n" );
++
++		return -1;
++	}
++	n = read( fd, StatBuf, STATBUFSIZE - 1 );
++	if ( n == STATBUFSIZE - 1 || n <= 0) {
++		log_error( "Internal buffer too small to read \'/proc/stat\'" );
++		
++		close( fd );
++		return -1;
++	}
++	close( fd );
++	StatBuf[ n ] = '\0';
++	
++	
++	VmStatBuf[ 0 ] = '\0';
++	if ( ( fd = open( "/proc/vmstat", O_RDONLY ) ) < 0 )
++		return 0; /* failure is okay, only exists for Linux >= 2.5.x */
++	
++	n = read( fd, VmStatBuf, STATBUFSIZE - 1 );
++	if ( n == STATBUFSIZE - 1 || n <= 0 ) {
++		log_error( "Internal buffer too small to read \'/proc/vmstat\'" );
++	
++		close( fd );
++		return -1;
++	}
++	close( fd );
++	VmStatBuf[ n ] = '\0';
++	
++	return 0;
++}
++
++void printCPUUser( const char* cmd ) {
++	(void)cmd;
++	
++	if ( Dirty )
++		process24Stat();
++	
++	output( "%f\n", CPULoad.userLoad );
++}
++
++void printCPUUserInfo( const char* cmd ) {
++	(void)cmd;
++
++	output( "CPU User Load\t0\t100\t%%\n" );
++}
++
++void printCPUNice( const char* cmd ) {
++	(void)cmd;
++	
++	if ( Dirty )
++		process24Stat();
++	
++	output( "%f\n", CPULoad.niceLoad );
++}
++
++void printCPUNiceInfo( const char* cmd ) {
++	(void)cmd;
++
++	output( "CPU Nice Load\t0\t100\t%%\n" );
++}
++
++void printCPUSys( const char* cmd ) {
++	(void)cmd;
++	
++	if ( Dirty )
++		process24Stat();
++	
++	output( "%f\n", CPULoad.sysLoad );
++}
++
++void printCPUSysInfo( const char* cmd ) {
++	(void)cmd;
++
++	output( "CPU System Load\t0\t100\t%%\n" );
++}
++
++void printCPUTotalLoad( const char* cmd ) {
++	(void)cmd;
++	
++	if ( Dirty )
++		process24Stat();
++	
++	output( "%f\n", CPULoad.userLoad + CPULoad.sysLoad + CPULoad.niceLoad + CPULoad.waitLoad );
++}
++
++void printCPUTotalLoadInfo( const char* cmd ) {
++	(void)cmd;
++
++	output( "CPU Total Load\t0\t100\t%%\n" );
++}
++
++void printCPUIdle( const char* cmd ) {
++	(void)cmd;
++	
++	if ( Dirty )
++		process24Stat();
++	
++	output( "%f\n", CPULoad.idleLoad );
++}
++
++void printCPUIdleInfo( const char* cmd ) {
++	(void)cmd;
++
++	output( "CPU Idle Load\t0\t100\t%%\n" );
++}
++
++void printCPUWait( const char* cmd )
++{
++	(void)cmd;
++
++	if ( Dirty )
++		process24Stat();
++
++	output( "%f\n", CPULoad.waitLoad );
++}
++
++void printCPUWaitInfo( const char* cmd )
++{
++	(void)cmd;
++	output( "CPU Wait Load\t0\t100\t%%\n" );
++}
++
++void printCPUxUser( const char* cmd ) {
++	int id;
++	
++	if ( Dirty )
++		process24Stat();
++	
++	sscanf( cmd + 7, "%d", &id );
++	output( "%f\n", SMPLoad[ id ].userLoad );
++}
++
++void printCPUxUserInfo( const char* cmd ) {
++	int id;
++
++	sscanf( cmd + 7, "%d", &id );
++	output( "CPU %d User Load\t0\t100\t%%\n", id );
++}
++
++void printCPUxNice( const char* cmd ) {
++	int id;
++	
++	if ( Dirty )
++		process24Stat();
++	
++	sscanf( cmd + 7, "%d", &id );
++	output( "%f\n", SMPLoad[ id ].niceLoad );
++}
++
++void printCPUxNiceInfo( const char* cmd ) {
++	int id;
++	
++	sscanf( cmd + 7, "%d", &id );
++	output( "CPU %d Nice Load\t0\t100\t%%\n", id );
++}
++
++void printCPUxSys( const char* cmd ) {
++	int id;
++	
++	if ( Dirty )
++		process24Stat();
++	
++	sscanf( cmd + 7, "%d", &id );
++	output( "%f\n", SMPLoad[ id ].sysLoad );
++}
++
++void printCPUxSysInfo( const char* cmd ) {
++	int id;
++	
++	sscanf( cmd + 7, "%d", &id );
++	output( "CPU %d System Load\t0\t100\t%%\n", id );
++}
++
++void printCPUxTotalLoad( const char* cmd ) {
++	int id;
++	
++	if ( Dirty )
++		process24Stat();
++	
++	sscanf( cmd + 7, "%d", &id );
++	output( "%f\n", SMPLoad[ id ].userLoad + SMPLoad[ id ].sysLoad + SMPLoad[ id ].niceLoad + SMPLoad[ id ].waitLoad );
++}
++
++void printCPUxTotalLoadInfo( const char* cmd ) {
++	int id;
++	
++	sscanf( cmd + 7, "%d", &id );
++	output( "CPU %d Total Load\t0\t100\t%%\n", id );
++}
++
++void printCPUxIdle( const char* cmd ) {
++	int id;
++	
++	if ( Dirty )
++		process24Stat();
++	
++	sscanf( cmd + 7, "%d", &id );
++	output( "%f\n", SMPLoad[ id ].idleLoad );
++}
++
++void printCPUxIdleInfo( const char* cmd ) {
++	int id;
++	
++	sscanf( cmd + 7, "%d", &id );
++	output( "CPU %d Idle Load\t0\t100\t%%\n", id );
++}
++
++void printCPUxWait( const char* cmd )
++{
++	int id;
++
++	if ( Dirty )
++		process24Stat();
++
++	sscanf( cmd + 7, "%d", &id );
++	output( "%f\n", SMPLoad[ id ].waitLoad );
++}
++
++void printCPUxWaitInfo( const char* cmd )
++{
++	int id;
++
++	sscanf( cmd + 7, "%d", &id );
++	output( "CPU %d Wait Load\t0\t100\t%%\n", id );
++}
++
++void print24DiskTotal( const char* cmd ) {
++	int id;
++	
++	if ( Dirty )
++		process24Stat();
++	
++	sscanf( cmd + 9, "%d", &id );
++	output( "%f\n", (float)( DiskLoad[ id ].s[ 0 ].delta
++							/ timeInterval ) );
++}
++
++void print24DiskTotalInfo( const char* cmd ) {
++	int id;
++	
++	sscanf( cmd + 9, "%d", &id );
++	output( "Disk %d Total Load\t0\t0\tKB/s\n", id );
++}
++
++void print24DiskRIO( const char* cmd ) {
++	int id;
++	
++	if ( Dirty )
++		process24Stat();
++	
++	sscanf( cmd + 9, "%d", &id );
++	output( "%f\n", (float)( DiskLoad[ id ].s[ 1 ].delta
++							/ timeInterval ) );
++}
++
++void print24DiskRIOInfo( const char* cmd ) {
++	int id;
++	
++	sscanf( cmd + 9, "%d", &id );
++	output( "Disk %d Read\t0\t0\tKB/s\n", id );
++}
++
++void print24DiskWIO( const char* cmd ) {
++	int id;
++	
++	if ( Dirty )
++		process24Stat();
++	
++	sscanf( cmd + 9, "%d", &id );
++	output( "%f\n", (float)( DiskLoad[ id ].s[ 2 ].delta
++							/ timeInterval ) );
++}
++
++void print24DiskWIOInfo( const char* cmd ) {
++	int id;
++	
++	sscanf( cmd + 9, "%d", &id );
++	output( "Disk %d Write\t0\t0\tKB/s\n", id );
++}
++
++void print24DiskRBlk( const char* cmd ) {
++	int id;
++	
++	if ( Dirty )
++		process24Stat();
++	
++	sscanf( cmd + 9, "%d", &id );
++	/* a block is 512 bytes or 1/2 kBytes */
++	output( "%f\n", (float)( DiskLoad[ id ].s[ 3 ].delta / timeInterval * 2 ) );
++}
++
++void print24DiskRBlkInfo( const char* cmd ) {
++	int id;
++	
++	sscanf( cmd + 9, "%d", &id );
++	output( "Disk %d Read Data\t0\t0\tKB/s\n", id );
++}
++
++void print24DiskWBlk( const char* cmd ) {
++	int id;
++	
++	if ( Dirty )
++		process24Stat();
++	
++	sscanf( cmd + 9, "%d", &id );
++	/* a block is 512 bytes or 1/2 kBytes */
++	output( "%f\n", (float)( DiskLoad[ id ].s[ 4 ].delta / timeInterval * 2 ) );
++}
++
++void print24DiskWBlkInfo( const char* cmd ) {
++	int id;
++	
++	sscanf( cmd + 9, "%d", &id );
++	output( "Disk %d Write Data\t0\t0\tKB/s\n", id );
++}
++
++void printPageIn( const char* cmd ) {
++	(void)cmd;
++	
++	if ( Dirty )
++		process24Stat();
++	
++	output( "%f\n", (float)( PageIn / timeInterval ) );
++}
++
++void printPageInInfo( const char* cmd ) {
++	(void)cmd;
++
++	output( "Paged in Pages\t0\t0\t1/s\n" );
++}
++
++void printPageOut( const char* cmd ) {
++	(void)cmd;
++	
++	if ( Dirty )
++		process24Stat();
++	
++	output( "%f\n", (float)( PageOut / timeInterval ) );
++}
++
++void printPageOutInfo( const char* cmd ) {
++	(void)cmd;
++
++	output( "Paged out Pages\t0\t0\t1/s\n" );
++}
++
++void printInterruptx( const char* cmd ) {
++	int id;
++	
++	if ( Dirty )
++		process24Stat();
++	
++	sscanf( cmd + strlen( "cpu/interrupts/int" ), "%d", &id );
++	output( "%f\n", (float)( Intr[ id ] / timeInterval ) );
++}
++
++void printInterruptxInfo( const char* cmd ) {
++	int id;
++	
++	sscanf( cmd + strlen( "cpu/interrupt/int" ), "%d", &id );
++	output( "Interrupt %d\t0\t0\t1/s\n", id );
++}
++
++void printCtxt( const char* cmd ) {
++	(void)cmd;
++	
++	if ( Dirty )
++		process24Stat();
++	
++	output( "%f\n", (float)( Ctxt / timeInterval ) );
++}
++
++void printCtxtInfo( const char* cmd ) {
++	(void)cmd;
++
++	output( "Context switches\t0\t0\t1/s\n" );
++}
++
++void print24DiskIO( const char* cmd ) {
++	int major, minor;
++	char devname[DISKDEVNAMELEN];
++	char name[ 17 ];
++	DiskIOInfo* ptr;
++	
++	sscanf( cmd, "disk/%[^_]_(%d:%d)/%16s", devname, &major, &minor, name );
++	
++	if ( Dirty )
++		process24Stat();
++	
++	ptr = DiskIO;
++	while ( ptr && ( ptr->major != major || ptr->minor != minor ) )
++		ptr = ptr->next;
++	
++	if ( !ptr ) {
++		print_error( "RECONFIGURE" );
++		output( "0\n" );
++		
++		log_error( "Disk device disappeared" );
++		return;
++	}
++	
++	if ( strcmp( name, "total" ) == 0 )
++		output( "%f\n", (float)( ptr->total.delta / timeInterval ) );
++	else if ( strcmp( name, "rio" ) == 0 )
++		output( "%f\n", (float)( ptr->rio.delta / timeInterval ) );
++	else if ( strcmp( name, "wio" ) == 0 )
++		output( "%f\n", (float)( ptr->wio.delta / timeInterval ) );
++	else if ( strcmp( name, "rblk" ) == 0 )
++		output( "%f\n", (float)( ptr->rblk.delta / ( timeInterval * 2 ) ) );
++	else if ( strcmp( name, "wblk" ) == 0 )
++		output( "%f\n", (float)( ptr->wblk.delta / ( timeInterval * 2 ) ) );
++	else {
++		output( "0\n" );
++		log_error( "Unknown disk device property \'%s\'", name );
++	}
++}
++
++void print24DiskIOInfo( const char* cmd ) {
++	int major, minor;
++	char devname[DISKDEVNAMELEN];
++	char name[ 17 ];
++	DiskIOInfo* ptr = DiskIO;
++	
++	sscanf( cmd, "disk/%[^_]_(%d:%d)/%16s", devname, &major, &minor, name );
++	
++	while ( ptr && ( ptr->major != major || ptr->minor != minor ) )
++		ptr = ptr->next;
++	
++	if ( !ptr ) {
++		/* Disk device has disappeared. Print a dummy answer. */
++		output( "Dummy\t0\t0\t\n" );
++		return;
++	}
++	
++	/* remove trailing '?' */
++	name[ strlen( name ) - 1 ] = '\0';
++	
++	if ( strcmp( name, "total" ) == 0 )
++		output( "Total accesses device %s (%d:%d)\t0\t0\t1/s\n",
++			 devname, major, minor );
++	else if ( strcmp( name, "rio" ) == 0 )
++		output( "Read data device %s (%d:%d)\t0\t0\t1/s\n",
++			 devname, major, minor );
++	else if ( strcmp( name, "wio" ) == 0 )
++		output( "Write data device %s (%d:%d)\t0\t0\t1/s\n",
++			 devname, major, minor );
++	else if ( strcmp( name, "rblk" ) == 0 )
++		output( "Read accesses device %s (%d:%d)\t0\t0\tKB/s\n",
++			 devname, major, minor );
++	else if ( strcmp( name, "wblk" ) == 0 )
++		output( "Write accesses device %s (%d:%d)\t0\t0\tKB/s\n",
++			 devname, major, minor );
++	else {
++		output( "Dummy\t0\t0\t\n" );
++		log_error( "Request for unknown device property \'%s\'",	name );
++	}
++}
+--- origsrc/kdebase-workspace-4.3.5/ksysguard/ksysguardd/Cygwin/stat.h	1969-12-31 18:00:00.000000000 -0600
++++ src/kdebase-workspace-4.3.5/ksysguard/ksysguardd/Cygwin/stat.h	2010-02-01 20:09:11.205822400 -0600
+@@ -0,0 +1,76 @@
++/*
++    KSysGuard, the KDE System Guard
++
++    Copyright (c) 1999, 2000 Chris Schlaeger <cs@kde.org>
++
++    This program is free software; you can redistribute it and/or
++    modify it under the terms of version 2 of the GNU General Public
++    License as published by the Free Software Foundation.
++
++    This program is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++    GNU General Public License for more details.
++
++    You should have received a copy of the GNU General Public License
++    along with this program; if not, write to the Free Software
++    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
++
++*/
++
++#ifndef KSG_STAT_H
++#define KSG_STAT_H
++
++void initStat( struct SensorModul* );
++void exitStat( void );
++
++int updateStat( void );
++
++void printCPUUser( const char* );
++void printCPUUserInfo( const char* );
++void printCPUNice( const char* );
++void printCPUNiceInfo( const char* );
++void printCPUSys( const char* );
++void printCPUSysInfo( const char* );
++void printCPUTotalLoad( const char* );
++void printCPUTotalLoadInfo( const char* );
++void printCPUIdle( const char* );
++void printCPUIdleInfo( const char* );
++void printCPUWait( const char* );
++void printCPUWaitInfo( const char* );
++void printCPUxUser( const char* );
++void printCPUxUserInfo( const char* );
++void printCPUxNice( const char* );
++void printCPUxNiceInfo( const char* );
++void printCPUxSys( const char* );
++void printCPUxSysInfo( const char* );
++void printCPUxTotalLoad( const char* );
++void printCPUxTotalLoadInfo( const char* );
++void printCPUxIdle( const char* );
++void printCPUxIdleInfo( const char* );
++void printCPUxWait( const char* );
++void printCPUxWaitInfo( const char* );
++void print24DiskIO( const char* cmd );
++void print24DiskIOInfo( const char* cmd );
++void print24DiskTotal( const char* );
++void print24DiskTotalInfo( const char* );
++void print24DiskRIO( const char* );
++void print24DiskRIOInfo( const char* );
++void print24DiskWIO( const char* );
++void print24DiskWIOInfo( const char* );
++void print24DiskRBlk( const char* );
++void print24DiskRBlkInfo( const char* );
++void print24DiskWBlk( const char* );
++void print24DiskWBlkInfo( const char* );
++void printPageIn( const char* );
++void printPageInInfo( const char* );
++void printPageOut( const char* );
++void printPageOutInfo( const char* );
++void printInterruptx( const char* );
++void printInterruptxInfo( const char* );
++void printCtxt( const char* );
++void printCtxtInfo( const char* );
++void printUptime( const char* );
++void printUptimeInfo( const char* );
++
++#endif
+--- origsrc/kdebase-workspace-4.3.5/ksysguard/ksysguardd/Cygwin/uptime.c	1969-12-31 18:00:00.000000000 -0600
++++ src/kdebase-workspace-4.3.5/ksysguard/ksysguardd/Cygwin/uptime.c	2010-02-01 20:09:11.207822500 -0600
+@@ -0,0 +1,116 @@
++/*
++    KSysGuard, the KDE System Guard
++
++    Copyright (c) 2006 Greg Martyn <greg.martyn@gmail.com>
++
++    This program is free software; you can redistribute it and/or
++    modify it under the terms of version 2 or later of the GNU General Public
++    License as published by the Free Software Foundation.
++
++    This program is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++    GNU General Public License for more details.
++
++    You should have received a copy of the GNU General Public License
++    along with this program; if not, write to the Free Software
++    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
++
++*/
++
++/*
++ * This file will read from /proc/uptime.
++*/
++
++#include <string.h> /* for strcmp */
++#include <stdlib.h> /* for malloc */
++
++#include <sys/types.h>
++#include <sys/stat.h>
++#include <fcntl.h>
++#include <unistd.h>
++
++#include "Command.h"
++#include "ksysguardd.h"
++
++#include "uptime.h"
++
++#define UPTIMEBUFSIZE 64
++
++static char UptimeBuf[ UPTIMEBUFSIZE ];	/* Buffer for /proc/uptime */
++
++static struct SensorModul* StatSM;
++
++void printUptime( const char* cmd );
++void printUptimeInfo( const char* cmd );
++static void openUptimeFile();
++
++void initUptime( struct SensorModul* sm ) {
++	char format[ 32 ];
++	char buf[ 1024 ];
++	char* uptimeBufP;
++
++	StatSM = sm;
++
++	openUptimeFile();
++
++	uptimeBufP = UptimeBuf;
++	sprintf( format, "%%%d[^\n]\n", (int)sizeof( buf ) - 1 );
++
++	/* Process values from /proc/uptime */
++	if (sscanf(uptimeBufP, format, buf) == 1) {
++		buf[sizeof(buf) - 1] = '\0';
++		registerMonitor( "system/uptime", "float", printUptime, printUptimeInfo, StatSM );
++	}
++}
++
++void exitUptime( void ) {
++
++}
++
++void printUptime( const char* cmd ) {
++	/* Process values from /proc/uptime */
++	(void)cmd;
++	
++	char format[ 32 ];
++	char buf[ 1024 ];
++	char* uptimeBufP = UptimeBuf;
++	float uptime;
++	
++	sprintf( format, "%%%d[^\n]\n", (int)sizeof( buf ) - 1 );
++	
++	openUptimeFile();
++	
++	if (sscanf(uptimeBufP, format, buf) == 1)
++	{
++		buf[sizeof(buf) - 1] = '\0';
++		sscanf( buf, "%f", &uptime );
++		output( "%f\n", uptime );
++	}
++}
++
++void printUptimeInfo( const char* cmd ) {
++	(void)cmd;
++	
++	output( "System uptime\t0\t0\ts\n" );
++}
++
++static void openUptimeFile() {
++	size_t n;
++	int fd;
++
++	UptimeBuf[ 0 ] = '\0';
++	if ( ( fd = open( "/proc/uptime", O_RDONLY ) ) < 0 )
++		return; /* couldn't open /proc/uptime */
++	
++	n = read( fd, UptimeBuf, UPTIMEBUFSIZE - 1 );
++	close( fd );
++
++	if ( n == UPTIMEBUFSIZE - 1 || n <= 0 ) {
++		log_error( "Internal buffer too small to read \'/proc/uptime\'" );
++
++		return;
++	}
++	
++	UptimeBuf[ n ] = '\0';
++}
+--- origsrc/kdebase-workspace-4.3.5/ksysguard/ksysguardd/Cygwin/uptime.h	1969-12-31 18:00:00.000000000 -0600
++++ src/kdebase-workspace-4.3.5/ksysguard/ksysguardd/Cygwin/uptime.h	2010-02-01 20:09:11.209822700 -0600
+@@ -0,0 +1,27 @@
++/*
++    KSysGuard, the KDE System Guard
++
++    Copyright (c) 2006 Greg Martyn <greg.martyn@gmail.com>
++
++    This program is free software; you can redistribute it and/or
++    modify it under the terms of version 2 or later of the GNU General Public
++    License as published by the Free Software Foundation.
++
++    This program is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++    GNU General Public License for more details.
++
++    You should have received a copy of the GNU General Public License
++    along with this program; if not, write to the Free Software
++    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
++
++*/
++
++#ifndef KSG_UPTIME_H
++#define KSG_UPTIME_H
++
++void initUptime( struct SensorModul* );
++void exitUptime( void );
++
++#endif

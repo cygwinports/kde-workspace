@@ -1,0 +1,11 @@
+usr/bin/cygkdeinit4_krunner.dll
+usr/bin/krunner.exe
+usr/lib/kde4/libexec/kscreenlocker.exe
+usr/share/autostart/krunner.desktop
+usr/share/dbus-1/interfaces/org.freedesktop.ScreenSaver.xml
+usr/share/dbus-1/interfaces/org.kde.krunner.App.xml
+usr/share/dbus-1/interfaces/org.kde.screensaver.xml
+usr/share/dbus-1/services/org.kde.krunner.service
+usr/share/kde4/config.kcfg/klaunch.kcfg
+usr/share/kde4/config.kcfg/kscreensaversettings.kcfg
+usr/share/doc/krunner/
