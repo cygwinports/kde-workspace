@@ -1,5 +1,5 @@
 category: KDE
-requires: libgcc1 libkdecore5 libQtCore4 libQtDBus4 libQtGui4 libstdc++6
+requires: kcontrol kde4-kcm-base libgcc1 libkdecore5 libQtCore4 libQtDBus4 libQtGui4 libstdc++6
 external-source: kdebase-workspace
 sdesc: "KDE preferences GUI manager"
 ldesc: "KDE base desktop packages"
