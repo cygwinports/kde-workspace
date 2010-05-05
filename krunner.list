@@ -6,6 +6,7 @@ usr/share/dbus-1/interfaces/org.freedesktop.ScreenSaver.xml
 usr/share/dbus-1/interfaces/org.kde.krunner.App.xml
 usr/share/dbus-1/interfaces/org.kde.screensaver.xml
 usr/share/dbus-1/services/org.kde.krunner.service
+usr/share/kde4/apps/kscreenlocker/
 usr/share/kde4/config.kcfg/klaunch.kcfg
 usr/share/kde4/config.kcfg/kscreensaversettings.kcfg
 usr/share/doc/krunner/

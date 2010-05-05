@@ -1,11 +1,10 @@
 inherit kde4
 
 PATCH_URI="
-	4.3.4-install-targets-default-args.patch
+	4.4.2-install-targets-default-args.patch
 	4.3.4-libprocesscore-cygwin.patch
-	4.3.4-optional-subdirs.patch
-	4.3.4-kcontrol-input-compile.patch
-	4.2.0-socklen_t.patch
+	4.4.2-kdm-optional.patch
+	4.4.2-kcontrol-compile.patch
 	4.3.5-ksysguardd-cygwin.patch
 "
 
@@ -14,7 +13,11 @@ DO_NOT_COMPILE="kdm powerdevil"
 PKG_NAMES="${PN} ${PN}-data kcheckpass kcminit kcontrol kdebase-startkde
            khotkeys klipper kmenuedit krunner kscreensaver ksmserver ksplash
            kstartupconfig4 ksysguard ksystraycmd kwin kwrited plasma solid
-           systemsettings libkworkspace4 libkworkspace4-devel"
+           systemsettings
+           libkworkspace4 libkworkspace4-devel qt4-guiplatform-kde"
 
 kdebase_workspace_CONTENTS="etc/postinstall/ usr/share/doc/Cygwin/ usr/share/doc/${PN}/"
 kdebase_workspace_data_CONTENTS="usr/share/icons/Oxygen_*/ usr/share/wallpapers/"
+qt4_guiplatform_kde_CONTENTS="usr/lib/kde4/plugins/gui_platform/"
+PKG_IGNORE="usr/lib/kde4/lib/libkfontinst* usr/lib/kde4/lib/libkhotkeysprivate.*
+            usr/lib/kde4/lib/libkwinnvidiahack.* usr/share/doc/HTML/en/kdm/"

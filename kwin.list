@@ -6,8 +6,7 @@ usr/bin/kwin*.exe
 usr/include/kde4/kcommondecoration.h
 usr/include/kde4/kdecoration*.h
 usr/include/kde4/kwin*.h
-usr/lib/kconf_update_bin/kwin_update_default_rules.exe*
-usr/lib/kconf_update_bin/kwin_update_window_settings.exe*
+usr/lib/kconf_update_bin/kwin_update_*
 usr/lib/kde4/kcm_kwin*
 usr/lib/kde4/kwin*
 usr/lib/kde4/lib/libkdecorations.dll.a
@@ -19,6 +18,7 @@ usr/share/kde4/apps/kconf_update/kwin*
 usr/share/kde4/apps/kconf_update/on-off_to_true-false.sh
 usr/share/kde4/apps/kconf_update/pluginlibFix.pl
 usr/share/kde4/apps/kwin/
+usr/share/kde4/config/aurorae.knsrc
 usr/share/kde4/config.kcfg/kwin.kcfg
 usr/share/kde4/services/desktop.desktop
 usr/share/kde4/services/kwin*

@@ -2,7 +2,6 @@ etc/ksysguarddrc
 usr/bin/cygkdeinit4_ksysguard.dll
 usr/bin/ksysguard.exe
 usr/bin/ksysguardd.exe
-usr/bin/setscheduler.exe
 usr/share/applications/kde4/ksysguard.desktop
 usr/share/doc/HTML/en/ksysguard/
 usr/share/icons/oxygen/16x16/apps/computer.png

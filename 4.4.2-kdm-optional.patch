@@ -1,0 +1,32 @@
+--- origsrc/kdebase-workspace-4.4.2/CMakeLists.txt	2010-03-26 12:26:54.000000000 -0500
++++ src/kdebase-workspace-4.4.2/CMakeLists.txt	2010-05-04 10:34:22.710448100 -0500
+@@ -155,7 +155,7 @@ macro_optional_add_subdirectory( doc )
+ macro_optional_add_subdirectory( wallpapers )
+ 
+ if(X11_Xau_FOUND AND X11_Xdmcp_FOUND)
+-  add_subdirectory( kdm )
++  macro_optional_add_subdirectory( kdm )
+ else(X11_Xau_FOUND AND X11_Xdmcp_FOUND)
+   message(STATUS "Xau lib or Xdmcp lib was missing. kdm will not compile")
+ endif(X11_Xau_FOUND AND X11_Xdmcp_FOUND)
+--- origsrc/kdebase-workspace-4.4.2/kcontrol/CMakeLists.txt	2009-12-31 07:28:13.000000000 -0600
++++ src/kdebase-workspace-4.4.2/kcontrol/CMakeLists.txt	2010-05-04 10:34:04.463404500 -0500
+@@ -18,7 +18,9 @@ endif(X11_Xkb_FOUND)
+ if(NOT WIN32)
+ add_subdirectory( bell )
+ add_subdirectory( input )
++if(BUILD_kdm)
+ add_subdirectory( kdm )
++endif(BUILD_kdm)
+ add_subdirectory( access )
+ add_subdirectory( screensaver )
+ add_subdirectory( dateandtime )
+--- origsrc/kdebase-workspace-4.4.2/libs/CMakeLists.txt	2009-11-13 04:57:37.000000000 -0600
++++ src/kdebase-workspace-4.4.2/libs/CMakeLists.txt	2010-05-04 10:34:22.716448500 -0500
+@@ -1,4 +1,6 @@
++if(BUILD_kdm)
+ add_subdirectory(kdm)
++endif(BUILD_kdm)
+ add_subdirectory(kephal)
+ add_subdirectory(plasmaclock)
+ add_subdirectory(plasmagenericshell)
