@@ -27,7 +27,7 @@ usr/lib/kde4/lib/libplasma-geolocation-interface.dll.a
 usr/lib/kde4/lib/libplasma_applet-system-monitor.dll.a
 usr/lib/kde4/lib/libweather_ion.dll.a
 usr/lib/kde4/plasma*
-usr/lib/python2.5/site-packages/PyKDE4/plasmascript.*
+usr/lib/python2.6/site-packages/PyKDE4/plasmascript.*
 usr/share/autostart/plasma-desktop.desktop
 usr/share/autostart/plasma.desktop
 usr/share/doc/HTML/en/plasma-desktop/

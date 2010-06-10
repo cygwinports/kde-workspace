@@ -13,11 +13,11 @@ Runtime requirements:
   libGL1-7.6.1-1
   libglib2.0_0-2.22.4-2
   libICE6-1.0.6-1
-  libkdecore5-4.4.3-1
-  libkpim4-4.4.3-1
-  libnepomuk4-4.4.3-1
-  libphonon4-4.4.0-1
-  libplasma3-4.4.3-1
+  libkdecore5-4.4.4-1
+  libkpim4-4.4.4-1
+  libnepomuk4-4.4.4-1
+  libphonon4-4.4.1-1
+  libplasma3-4.4.4-1
   libpng12-1.2.35-10
   libqedje0-0.4.0-1
   libqimageblitz4-0.0.4-10
@@ -35,7 +35,7 @@ Runtime requirements:
   libsoprano4-2.4.3-1
   libstdc++6-4.3.4-3
   libstreamanalyzer0-0.7.2-1
-  libusb-win32-0.1.12.2-1
+  libusb0.1_4-0.1.3-1
   libX11_6-1.3.3-1
   libXau6-1.0.5-1
   libXcomposite1-0.4.1-1
@@ -68,47 +68,50 @@ Canonical website:
   http://www.kde.org/
 
 Canonical download:
-  ftp://ftp.kde.org/pub/kde/stable/4.4.3/
+  ftp://ftp.kde.org/pub/kde/stable/4.4.4/
 
 -------------------------------------------
 
 Build instructions:
-  unpack kdebase-workspace-4.4.3-X-src.tar.bz2
+  unpack kdebase-workspace-4.4.4-X-src.tar.bz2
     if you use setup to install this src package, it will be
 	 unpacked under /usr/src automatically
   cd /usr/src
-  cygport ./kdebase-workspace-4.4.3-X.cygport all
+  cygport ./kdebase-workspace-4.4.4-X.cygport all
 
 This will create:
-  /usr/src/kdebase-workspace-4.4.3-X-src.tar.bz2
-  /usr/src/kdebase-workspace-4.4.3-X.tar.bz2
-  /usr/src/kdebase-workspace-data-4.4.3-X.tar.bz2
-  /usr/src/kcheckpass-4.4.3-X.tar.bz2
-  /usr/src/kcminit-4.4.3-X.tar.bz2
-  /usr/src/kcontrol-4.4.3-X.tar.bz2
-  /usr/src/kdebase-startkde-4.4.3-X.tar.bz2
-  /usr/src/khotkeys-4.4.3-X.tar.bz2
-  /usr/src/klipper-4.4.3-X.tar.bz2
-  /usr/src/kmenuedit-4.4.3-X.tar.bz2
-  /usr/src/krunner-4.4.3-X.tar.bz2
-  /usr/src/kscreensaver-4.4.3-X.tar.bz2
-  /usr/src/ksmserver-4.4.3-X.tar.bz2
-  /usr/src/ksplash-4.4.3-X.tar.bz2
-  /usr/src/kstartupconfig4-4.4.3-X.tar.bz2
-  /usr/src/ksysguard-4.4.3-X.tar.bz2
-  /usr/src/ksystraycmd-4.4.3-X.tar.bz2
-  /usr/src/kwin-4.4.3-X.tar.bz2
-  /usr/src/kwrited-4.4.3-X.tar.bz2
-  /usr/src/libkworkspace4-devel-4.4.3-X.tar.bz2
-  /usr/src/libkworkspace4-4.4.3-X.tar.bz2
-  /usr/src/plasma-4.4.3-X.tar.bz2
-  /usr/src/qt4-guiplatform-kde-4.4.3-X.tar.bz2
-  /usr/src/solid-4.4.3-X.tar.bz2
-  /usr/src/systemsettings-4.4.3-X.tar.bz2
+  /usr/src/kdebase-workspace-4.4.4-X-src.tar.bz2
+  /usr/src/kdebase-workspace-4.4.4-X.tar.bz2
+  /usr/src/kdebase-workspace-data-4.4.4-X.tar.bz2
+  /usr/src/kcheckpass-4.4.4-X.tar.bz2
+  /usr/src/kcminit-4.4.4-X.tar.bz2
+  /usr/src/kcontrol-4.4.4-X.tar.bz2
+  /usr/src/kdebase-startkde-4.4.4-X.tar.bz2
+  /usr/src/khotkeys-4.4.4-X.tar.bz2
+  /usr/src/klipper-4.4.4-X.tar.bz2
+  /usr/src/kmenuedit-4.4.4-X.tar.bz2
+  /usr/src/krunner-4.4.4-X.tar.bz2
+  /usr/src/kscreensaver-4.4.4-X.tar.bz2
+  /usr/src/ksmserver-4.4.4-X.tar.bz2
+  /usr/src/ksplash-4.4.4-X.tar.bz2
+  /usr/src/kstartupconfig4-4.4.4-X.tar.bz2
+  /usr/src/ksysguard-4.4.4-X.tar.bz2
+  /usr/src/ksystraycmd-4.4.4-X.tar.bz2
+  /usr/src/kwin-4.4.4-X.tar.bz2
+  /usr/src/kwrited-4.4.4-X.tar.bz2
+  /usr/src/libkworkspace4-devel-4.4.4-X.tar.bz2
+  /usr/src/libkworkspace4-4.4.4-X.tar.bz2
+  /usr/src/plasma-4.4.4-X.tar.bz2
+  /usr/src/qt4-guiplatform-kde-4.4.4-X.tar.bz2
+  /usr/src/solid-4.4.4-X.tar.bz2
+  /usr/src/systemsettings-4.4.4-X.tar.bz2
 
 -------------------------------------------
 
 Port Notes:
+
+----- version 4.4.4-1 -----
+Version bump.
 
 ----- version 4.4.3-1 -----
 Version bump for KDE 4.4.
