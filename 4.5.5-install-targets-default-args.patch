@@ -20,6 +20,16 @@
  install(TARGETS plasma-desktop ${INSTALL_TARGETS_DEFAULT_ARGS})
  install(FILES plasma.desktop plasma-desktop.desktop DESTINATION ${AUTOSTART_INSTALL_DIR})
  install(FILES kcfg/plasma-shell-desktop.kcfg  DESTINATION  ${KCFG_INSTALL_DIR})
+--- origsrc/kdebase-workspace-4.5.5/plasma/generic/shells/plasma-windowed/CMakeLists.txt	2010-05-16 05:04:32.000000000 -0500
++++ src/kdebase-workspace-4.5.5/plasma/generic/shells/plasma-windowed/CMakeLists.txt	2011-01-14 02:17:00.780058600 -0600
+@@ -14,6 +14,6 @@ kde4_add_kdeinit_executable(plasma-windo
+ target_link_libraries(kdeinit_plasma-windowed ${KDE4_PLASMA_LIBS} kworkspace ${KDE4_KIO_LIBS} ${X11_LIBRARIES} ${KDE4_KFILE_LIBS} )
+ 
+ 
+-install(TARGETS kdeinit_plasma-windowed DESTINATION ${LIB_INSTALL_DIR})
++install(TARGETS kdeinit_plasma-windowed ${INSTALL_TARGETS_DEFAULT_ARGS})
+ install(TARGETS plasma-windowed ${INSTALL_TARGETS_DEFAULT_ARGS})
+ 
 --- origsrc/kdebase-workspace-4.4.2/plasma/netbook/shell/CMakeLists.txt	2009-10-26 04:14:50.000000000 -0500
 +++ src/kdebase-workspace-4.4.2/plasma/netbook/shell/CMakeLists.txt	2010-05-04 12:19:35.754533600 -0500
 @@ -19,7 +19,7 @@ if(X11_Xrender_FOUND)

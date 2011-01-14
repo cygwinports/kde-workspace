@@ -1,0 +1,5 @@
+category: KDE
+requires: libgcc1 libkdecore5 libQtCore4 libQtDBus4 libQtGui4 libstdc++6 libX11_6
+external-source: kdebase-workspace
+sdesc: "KDE4 Oxygen style"
+ldesc: "KDE base desktop packages"

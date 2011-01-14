@@ -16,4 +16,5 @@ usr/lib/kde4/kded_kephal.dll
 usr/lib/kde4/libexec/ksysguardprocesslist_helper.exe
 usr/share/dbus-1/system-services/org.kde.ksysguard.processlisthelper.service
 usr/share/kde4/services/kded/kephal.desktop
+usr/share/kde4/servicetypes/plasma-layout-template.desktop
 usr/share/kde4/servicetypes/screensaver.desktop

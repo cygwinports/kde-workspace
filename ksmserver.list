@@ -4,6 +4,7 @@ usr/bin/ksmserver.exe
 usr/lib/kde4/kcm_smserver.dll
 usr/share/dbus-1/interfaces/org.kde.KSMServerInterface.xml
 usr/share/kde4/apps/kconf_update/ksmserver.upd
+usr/share/kde4/apps/kconf_update/ksmserver_shortcuts.upd
 usr/share/kde4/apps/kconf_update/move_session_config.sh
 usr/share/kde4/services/kcmsmserver.desktop
 usr/share/doc/ksmserver/

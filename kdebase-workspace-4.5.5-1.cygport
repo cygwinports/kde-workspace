@@ -1,0 +1,23 @@
+inherit kde4
+
+PATCH_URI="
+	4.5.5-install-targets-default-args.patch
+	4.3.4-libprocesscore-cygwin.patch
+	4.4.2-kdm-optional.patch
+	4.4.2-kcontrol-compile.patch
+	4.3.5-ksysguardd-cygwin.patch
+"
+
+DO_NOT_COMPILE="kdm powerdevil"
+
+PKG_NAMES="${PN} ${PN}-data kcheckpass kcminit kcontrol kdebase-startkde
+           khotkeys kinfocenter klipper kmenuedit krunner kscreensaver ksmserver
+           ksplash kstartupconfig4 ksysguard ksystraycmd kwin kwrited plasma
+           solid systemsettings kde4-kstyle-oxygen
+           libkworkspace4 libkworkspace-devel qt4-guiplatform-kde"
+
+kdebase_workspace_CONTENTS="etc/postinstall/ usr/share/doc/${PN}/"
+kdebase_workspace_data_CONTENTS="usr/share/icons/Oxygen_*/ usr/share/wallpapers/"
+qt4_guiplatform_kde_CONTENTS="usr/lib/kde4/plugins/gui_platform/"
+PKG_IGNORE="usr/lib/libkfontinst* usr/lib/libkhotkeysprivate.*
+            usr/lib/libkwinnvidiahack.* usr/lib/liboxygen* usr/share/doc/HTML/en/kdm/"
