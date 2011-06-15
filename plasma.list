@@ -36,6 +36,7 @@ usr/share/kde4/apps/plasma/
 usr/share/kde4/apps/plasma-desktop/
 usr/share/kde4/apps/plasma-netbook/
 usr/share/kde4/apps/plasma_scriptengine_*/
+usr/share/kde4/config/activities.knsrc
 usr/share/kde4/config/plasma-overlayrc
 usr/share/kde4/config/plasma-themes.knsrc
 usr/share/kde4/config/wallpaper.knsrc
@@ -46,5 +47,6 @@ usr/share/kde4/services/plasma*.desktop
 usr/share/kde4/services/recentdocuments.desktop
 usr/share/kde4/servicetypes/plasma-geolocationprovider.desktop
 usr/share/kde4/servicetypes/plasma-sal-menu.desktop
+usr/share/kde4/servicetypes/plasma_shareprovider.desktop
 usr/share/man/man1/plas*.1*
 usr/share/doc/plasma/

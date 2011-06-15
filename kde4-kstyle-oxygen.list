@@ -2,6 +2,7 @@ usr/bin/cygoxygenstyle*
 usr/bin/oxygen-demo.exe
 usr/bin/oxygen-settings.exe
 usr/lib/kde4/kstyle_oxygen_config.dll
+usr/lib/kde4/plugins/gui_platform/cygkde.dll
 usr/lib/kde4/plugins/styles/oxygen.dll
 usr/share/kde4/apps/kstyle/themes/oxygen.themerc
 usr/share/kde4/apps/kstyle/themes/qtcde.themerc

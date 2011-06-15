@@ -1,5 +1,5 @@
 category: KDE
-requires: kcmshell4 libfontconfig1 libfreetype6 libgcc1 libGL1 libkdecore5 libkworkspace4 libphonon4 libQt3Support4 libQtCore4 libQtDBus4 libQtGui4 libQtXml4 libstdc++6 libstreamanalyzer0 libusb0.1_4 libX11_6 libXcursor1 libXext3 libXft2 libXi2 libxklavier16 libXrandr2 libXtst6
+requires: kcmshell4 libfontconfig1 libfreetype6 libgcc1 libGL1 libkdecore5 libkworkspace4 libphonon4 libQt3Support4 libQtCore4 libQtDBus4 libQtGui4 libQtXml4 libstdc++6 libstreamanalyzer0 libusb0.1_4 libX11_6 libXcursor1 libXext3 libXft2 libXi2 libxkbfile1 libXrandr2 libXtst6
 external-source: kdebase-workspace
 sdesc: "KDE desktop control panels"
 ldesc: "KDE base desktop packages"
