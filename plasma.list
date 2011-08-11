@@ -4,11 +4,13 @@ usr/bin/cygplasma-geolocation-interface-4.dll
 usr/bin/cygplasma_applet-system-monitor-4.dll
 usr/bin/cygweather_ion*.dll
 usr/bin/plasm*
+usr/bin/remote-widgets-browser.exe
 usr/include/kde4/KDE/Plasma/
 usr/include/kde4/plasma/
 usr/lib/kconf_update_bin/plasma-add-shortcut-to-menu.exe
 usr/lib/kconf_update_bin/plasma-to-plasma-desktop.exe
 usr/lib/kde4/ion_bbcukmet.dll
+usr/lib/kde4/ion_debianweather.dll
 usr/lib/kde4/ion_envcan.dll
 usr/lib/kde4/ion_noaa.dll
 usr/lib/kde4/ion_wettercom.dll
@@ -27,6 +29,7 @@ usr/share/doc/HTML/en/plasma-desktop/
 usr/share/kde4/apps/desktoptheme/air-netbook/
 usr/share/kde4/apps/desktoptheme/default/calendar/mini-calendar.svgz
 usr/share/kde4/apps/desktoptheme/default/system-monitor/hdd_panel.svgz
+usr/share/kde4/apps/desktoptheme/default/widgets/activities.svgz
 usr/share/kde4/apps/desktoptheme/default/widgets/battery-oxygen.svgz
 usr/share/kde4/apps/katepart/syntax/plasma-desktop-js.xml
 usr/share/kde4/apps/kconf_update/plasma-add-shortcut-to-menu.upd

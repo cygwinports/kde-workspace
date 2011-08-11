@@ -1,5 +1,5 @@
 category: KDE
-requires: coreutils dbus grep kcminit kdebase-workspace-data ksmserver ksplash kstartupconfig4 kwin libkdecore5 libQtDBus4 plasma mkfontdir xmessage xprop xrdb xset xsetroot
-external-source: kdebase-workspace
+requires: coreutils dbus grep kcminit ksmserver ksplash kstartupconfig4 kwin libkdecore5 libQtDBus4 plasma mkfontdir xmessage xprop xrdb xset xsetroot
+external-source: kde-workspace
 sdesc: "KDE desktop startup script"
 ldesc: "KDE base desktop packages"

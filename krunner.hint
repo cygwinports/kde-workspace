@@ -1,5 +1,5 @@
 category: KDE
 requires: libgcc1 libGL1 libkdecore5 libkworkspace4 libplasma3 libQtCore4 libQtDBus4 libQtGui4 libstdc++6 libX11_6 libXau6 libXcursor1 libXext6 libXss1
-external-source: kdebase-workspace
+external-source: kde-workspace
 sdesc: "KDE application launch dialog"
 ldesc: "KDE base desktop packages"

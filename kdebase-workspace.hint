@@ -1,4 +1,0 @@
-category: KDE
-requires: kcheckpass kcminit kcontrol kdebase-startkde kdebase-workspace-data khotkeys klipper kmenuedit krunner kscreensaver ksmserver ksplash kstartupconfig4 ksysguard ksystraycmd kwin kwrited plasma solid systemsettings qt4-guiplatform-kde
-sdesc: "KDE desktop (meta-package)"
-ldesc: "KDE base desktop packages"

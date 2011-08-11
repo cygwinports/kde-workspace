@@ -60,6 +60,7 @@ usr/share/kde4/apps/color-schemes/
 usr/share/kde4/apps/freespacenotifier/
 usr/share/kde4/apps/kaccess/kaccess.notifyrc
 usr/share/kde4/apps/kcminput/
+usr/share/kde4/apps/kcmkeyboard/
 usr/share/kde4/apps/kcmkeys/
 usr/share/kde4/apps/kconf_update/convertShortcuts.pl
 usr/share/kde4/apps/kconf_update/kaccel.upd
@@ -73,6 +74,7 @@ usr/share/kde4/apps/kfontview/
 usr/share/kde4/apps/konqsidebartng/virtual_folders/services/fonts.desktop
 usr/share/kde4/apps/kthememanager/
 usr/share/kde4/config/colorschemes.knsrc
+usr/share/kde4/config/xcursor.knsrc
 usr/share/kde4/config.kcfg/freespacenotifier.kcfg
 usr/share/kde4/services/autostart.desktop
 usr/share/kde4/services/bell.desktop

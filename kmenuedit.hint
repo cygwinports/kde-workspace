@@ -1,5 +1,5 @@
 category: KDE
 requires: libgcc1 libkdecore5 libQt3Support4 libQtCore4 libQtDBus4 libQtGui4 libQtXml4 libstdc++6
-external-source: kdebase-workspace
+external-source: kde-workspace
 sdesc: "KDE desktop menu editor"
 ldesc: "KDE base desktop packages"

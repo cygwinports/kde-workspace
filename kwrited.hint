@@ -1,5 +1,5 @@
 category: KDE
 requires: libgcc1 libkdecore5 libQtCore4 libstdc++6
-external-source: kdebase-workspace
+external-source: kde-workspace
 sdesc: "KDE system messages daemon"
 ldesc: "KDE base desktop packages"

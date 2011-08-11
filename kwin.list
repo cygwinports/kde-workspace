@@ -3,6 +3,7 @@ usr/bin/cygkdeinit4_kwin*.dll
 usr/bin/cygkwineffects-1.dll
 usr/bin/cygkwinnvidiahack-4.dll
 usr/bin/kwin*.exe
+usr/bin/oxygen-shadow-demo.exe
 usr/include/kde4/kcommondecoration.h
 usr/include/kde4/kdecoration*.h
 usr/include/kde4/kwin*.h

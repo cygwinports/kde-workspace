@@ -1,5 +1,5 @@
 category: KDE
 requires: crypt libgcc1
-external-source: kdebase-workspace
+external-source: kde-workspace
 sdesc: "KDE password authentication program"
 ldesc: "KDE base desktop packages"

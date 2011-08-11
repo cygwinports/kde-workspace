@@ -1,5 +1,5 @@
 category: KDE
 requires: libgcc1 libjpeg8 libkdecore5 libQtCore4 libQtGui4 libpng14 libstdc++6 libX11_6 libXext6 libXinerama1
-external-source: kdebase-workspace
+external-source: kde-workspace
 sdesc: "KDE desktop splash screen"
 ldesc: "KDE base desktop packages"
