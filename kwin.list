@@ -1,7 +1,6 @@
 usr/bin/cygkdecorations-4.dll
 usr/bin/cygkdeinit4_kwin*.dll
-usr/bin/cygkwineffects-1.dll
-usr/bin/cygkwinnvidiahack-4.dll
+usr/bin/cygkwin*
 usr/bin/kwin*.exe
 usr/bin/oxygen-shadow-demo.exe
 usr/include/kde4/kcommondecoration.h
@@ -12,7 +11,7 @@ usr/lib/kde4/kcm_kwin*
 usr/lib/kde4/kwin*
 usr/lib/kde4/libexec/kwin_*
 usr/lib/libkdecorations.dll.a
-usr/lib/libkwineffects.dll.a
+usr/lib/libkwin*
 usr/share/dbus-1/interfaces/org.kde.KWin.xml
 usr/share/icons/oxygen/*/apps/kcmkwm.*
 usr/share/icons/oxygen/*/apps/kwin.*

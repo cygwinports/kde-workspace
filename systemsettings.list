@@ -4,6 +4,7 @@ usr/include/kde4/systemsettingsview/
 usr/lib/kde4/classic_mode.dll
 usr/lib/kde4/icon_mode.dll
 usr/lib/libsystemsettingsview.dll.a
+usr/share/applications/kde4/kdesystemsettings.desktop
 usr/share/applications/kde4/systemsettings.desktop
 usr/share/doc/HTML/en/systemsettings/
 usr/share/kde4/apps/systemsettings/

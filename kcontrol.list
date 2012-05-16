@@ -74,6 +74,7 @@ usr/share/kde4/apps/kfontview/
 usr/share/kde4/apps/konqsidebartng/virtual_folders/services/fonts.desktop
 usr/share/kde4/apps/kthememanager/
 usr/share/kde4/config/colorschemes.knsrc
+usr/share/kde4/config/kfontinst.knsrc
 usr/share/kde4/config/xcursor.knsrc
 usr/share/kde4/config.kcfg/freespacenotifier.kcfg
 usr/share/kde4/services/autostart.desktop

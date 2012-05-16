@@ -3,7 +3,7 @@ inherit kde4
 PATCH_URI="
 	4.5.5-install-targets-default-args.patch
 	4.3.4-libprocesscore-cygwin.patch
-	4.4.2-kdm-optional.patch
+	4.8.3-kdm-optional.patch
 	4.4.2-kcontrol-compile.patch
 	4.3.5-ksysguardd-cygwin.patch
 "
@@ -18,4 +18,6 @@ PKG_NAMES="${PN} kcheckpass kcminit kcontrol kdebase-startkde
 
 kde_workspace_CONTENTS="etc/postinstall/ usr/share/doc/${PN}/"
 PKG_IGNORE="usr/lib/libkfontinst* usr/lib/libkhotkeysprivate.*
-            usr/lib/libkwinnvidiahack.* usr/lib/liboxygen* usr/share/doc/HTML/en/kdm/"
+            usr/lib/liboxygen* usr/share/doc/HTML/en/kdm/"
+
+DIFF_EXCLUDES="symlinks"
