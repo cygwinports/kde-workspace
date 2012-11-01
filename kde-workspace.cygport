@@ -1,0 +1,65 @@
+inherit kde4 python
+
+NAME="kde-workspace"
+VERSION=4.8.5
+RELEASE=1
+CATEGORY="KDE"
+SUMMARY="KDE desktop components"
+
+PATCH_URI="
+	4.5.5-install-targets-default-args.patch
+	4.3.4-libprocesscore-cygwin.patch
+	4.8.3-kdm-optional.patch
+	4.4.2-kcontrol-compile.patch
+	4.3.5-ksysguardd-cygwin.patch
+"
+
+DO_NOT_COMPILE="kdm powerdevil"
+
+PKG_NAMES="${PN} kcheckpass kcminit kcontrol kdebase-startkde
+           khotkeys kinfocenter klipper kmenuedit krunner kscreensaver ksmserver
+           ksplash kstartupconfig4 ksysguard ksystraycmd kwin kwrited plasma
+           solid systemsettings kde4-kstyle-oxygen
+           libkworkspace4 libkworkspace-devel"
+
+kde_workspace_CONTENTS="etc/postinstall/ usr/share/doc/${PN}/"
+kcheckpass_SUMMARY="KDE password authentication program"
+kcheckpass_CONTENTS="usr/lib/kde4/libexec/kcheckpass.exe usr/share/doc/kcheckpass/"
+kcminit_SUMMARY="KDE preferences session manager"
+kcminit_CONTENTS="usr/bin/*kcminit*"
+kcontrol_SUMMARY="KDE desktop control panels"
+kde4_kstyle_oxygen_SUMMARY="KDE4 Oxygen style"
+kdebase_startkde_SUMMARY="KDE desktop startup script"
+kdebase_startkde_REQUIRES="dbus kcminit ksmserver ksplash kstartupconfig4 kwin plasma mkfontdir xmessage xprop xrdb xset xsetroot"
+kdebase_startkde_CONTENTS="usr/bin/startkde"
+khotkeys_SUMMARY="KDE hotkey manager"
+kinfocenter_SUMMARY="KDE information center"
+klipper_SUMMARY="KDE clipboard manager"
+kmenuedit_SUMMARY="KDE desktop menu editor"
+krunner_SUMMARY="KDE application launch dialog"
+kscreensaver_SUMMARY="KDE base screensavers"
+kscreensaver_CONTENTS="usr/bin/*.kss.exe usr/share/kde4/services/ScreenSavers/
+	usr/share/doc/kscreensaver/"
+ksmserver_SUMMARY="KDE desktop session manager"
+ksplash_SUMMARY="KDE desktop splash screen"
+kstartupconfig4_SUMMARY="KDE startup configuration loader"
+kstartupconfig4_CONTENTS="usr/bin/k*startupconfig4.exe"
+ksysguard_SUMMARY="KDE system monitor"
+ksystraycmd_SUMMARY="KDE system tray application launcher"
+ksystraycmd_CONTENTS="usr/bin/ksystraycmd.exe usr/share/doc/ksystraycmd/"
+kwin_SUMMARY="KDE window manager"
+kwrited_SUMMARY="KDE system messages daemon"
+kwrited_CONTENTS="usr/bin/kwrited.exe usr/share/autostart/kwrited-autostart.desktop
+	usr/share/kde4/apps/kwrited/kwrited.notifyrc"
+libkworkspace4_SUMMARY="KDE workspace desktop libraries (runtime)"
+libkworkspace_devel_REQUIRES="libkdecore-devel libQtCore4-devel libQtDBus4-devel libQtGui4-devel libQtNetwork4-devel libQtXml4-devel libsoprano-devel libX11-devel"
+libkworkspace_devel_SUMMARY="KDE workspace desktop libraries (development)"
+plasma_SUMMARY="KDE Plasma desktop"
+solid_SUMMARY="KDE Solid networking backends"
+systemsettings_SUMMARY="KDE preferences GUI manager"
+systemsettings_REQUIRES="kcontrol"
+
+PKG_IGNORE="usr/lib/libkfontinst* usr/lib/libkhotkeysprivate.*
+            usr/lib/liboxygen* usr/share/doc/HTML/en/kdm/"
+
+DIFF_EXCLUDES="symlinks"

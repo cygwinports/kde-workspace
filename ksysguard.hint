@@ -1,5 +1,0 @@
-category: KDE
-requires: libgcc1 libkdecore5 libkworkspace4 libQtCore4 libQtDBus4 libQtGui4 libQtXml4 libstdc++6
-external-source: kde-workspace
-sdesc: "KDE system monitor"
-ldesc: "KDE base desktop packages"
