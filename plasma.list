@@ -4,9 +4,9 @@ usr/bin/cygplasma-geolocation-interface-4.dll
 usr/bin/cygplasma_applet-system-monitor-4.dll
 usr/bin/cygweather_ion*.dll
 usr/bin/plasm*
-usr/bin/remote-widgets-browser.exe
 usr/include/kde4/KDE/Plasma/
 usr/include/kde4/plasma/
+usr/lib/kconf_update_bin/notifications-to-orgkdenotifications.exe
 usr/lib/kconf_update_bin/plasma-add-shortcut-to-menu.exe
 usr/lib/kconf_update_bin/plasma-to-plasma-desktop.exe
 usr/lib/kde4/ion_bbcukmet.dll
@@ -15,6 +15,7 @@ usr/lib/kde4/ion_envcan.dll
 usr/lib/kde4/ion_noaa.dll
 usr/lib/kde4/ion_wettercom.dll
 usr/lib/kde4/kcm_krunner_kill.dll
+usr/lib/kde4/kded_appmenu.dll
 usr/lib/kde4/kded_statusnotifierwatcher.dll
 usr/lib/kde4/krunner_*.dll
 usr/lib/libkickoff.dll.a
@@ -22,9 +23,11 @@ usr/lib/libplasma-geolocation-interface.dll.a
 usr/lib/libplasma_applet-system-monitor.dll.a
 usr/lib/libweather_ion.dll.a
 usr/lib/kde4/plasma*
-usr/lib/python2.6/site-packages/PyKDE4/plasmascript.*
+usr/lib/python2.7/site-packages/PyKDE4/plasmascript.*
 usr/share/autostart/plasma-desktop.desktop
 usr/share/autostart/plasma.desktop
+usr/share/dbus-1/interfaces/com.canonical.AppMenu.Registrar.xml
+usr/share/dbus-1/interfaces/org.kde.kded.appmenu.xml
 usr/share/doc/HTML/en/plasma-desktop/
 usr/share/kde4/apps/desktoptheme/air-netbook/
 usr/share/kde4/apps/desktoptheme/default/calendar/mini-calendar.svgz
@@ -32,6 +35,7 @@ usr/share/kde4/apps/desktoptheme/default/system-monitor/hdd_panel.svgz
 usr/share/kde4/apps/desktoptheme/default/widgets/activities.svgz
 usr/share/kde4/apps/desktoptheme/default/widgets/battery-oxygen.svgz
 usr/share/kde4/apps/katepart/syntax/plasma-desktop-js.xml
+usr/share/kde4/apps/kconf_update/notifications-to-orgkdenotifications.upd
 usr/share/kde4/apps/kconf_update/plasma-add-shortcut-to-menu.upd
 usr/share/kde4/apps/kconf_update/plasma-to-plasmadesktop-shortcuts.upd
 usr/share/kde4/apps/kconf_update/plasmarc-to-plasmadesktoprc.upd
@@ -44,6 +48,7 @@ usr/share/kde4/config/plasma-overlayrc
 usr/share/kde4/config/plasma-themes.knsrc
 usr/share/kde4/config/wallpaper.knsrc
 usr/share/kde4/config.kcfg/plasma-shell-desktop.kcfg
+usr/share/kde4/services/kded/appmenu.desktop
 usr/share/kde4/services/kded/statusnotifierwatcher.desktop
 usr/share/kde4/services/ion-*.desktop
 usr/share/kde4/services/plasma*.desktop
@@ -51,5 +56,4 @@ usr/share/kde4/services/recentdocuments.desktop
 usr/share/kde4/servicetypes/plasma-geolocationprovider.desktop
 usr/share/kde4/servicetypes/plasma-sal-menu.desktop
 usr/share/kde4/servicetypes/plasma_shareprovider.desktop
-usr/share/man/man1/plas*.1*
 usr/share/doc/plasma/

@@ -1,7 +1,7 @@
 inherit kde4 python
 
 NAME="kde-workspace"
-VERSION=4.8.5
+VERSION=4.10.5
 RELEASE=1
 CATEGORY="KDE"
 SUMMARY="KDE desktop components"
@@ -16,22 +16,20 @@ PATCH_URI="
 
 DO_NOT_COMPILE="kdm powerdevil"
 
-PKG_NAMES="${PN} kcheckpass kcminit kcontrol kdebase-startkde
+PKG_NAMES="${PN} kcheckpass kcminit kcontrol
            khotkeys kinfocenter klipper kmenuedit krunner kscreensaver ksmserver
            ksplash kstartupconfig4 ksysguard ksystraycmd kwin kwrited plasma
            solid systemsettings kde4-kstyle-oxygen
            libkworkspace4 libkworkspace-devel"
-
-kde_workspace_CONTENTS="etc/postinstall/ usr/share/doc/${PN}/"
+kde_workspace_REQUIRES="dbus kcminit ksmserver ksplash kstartupconfig4 kwin plasma mkfontdir xmessage xprop xrdb xset xsetroot"
+kde_workspace_OBSOLETES="kdebase-startkde"
+kde_workspace_CONTENTS="etc/postinstall/ usr/bin/startkde usr/share/doc/${PN}/"
 kcheckpass_SUMMARY="KDE password authentication program"
 kcheckpass_CONTENTS="usr/lib/kde4/libexec/kcheckpass.exe usr/share/doc/kcheckpass/"
 kcminit_SUMMARY="KDE preferences session manager"
 kcminit_CONTENTS="usr/bin/*kcminit*"
 kcontrol_SUMMARY="KDE desktop control panels"
 kde4_kstyle_oxygen_SUMMARY="KDE4 Oxygen style"
-kdebase_startkde_SUMMARY="KDE desktop startup script"
-kdebase_startkde_REQUIRES="dbus kcminit ksmserver ksplash kstartupconfig4 kwin plasma mkfontdir xmessage xprop xrdb xset xsetroot"
-kdebase_startkde_CONTENTS="usr/bin/startkde"
 khotkeys_SUMMARY="KDE hotkey manager"
 kinfocenter_SUMMARY="KDE information center"
 klipper_SUMMARY="KDE clipboard manager"

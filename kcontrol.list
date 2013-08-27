@@ -32,9 +32,9 @@ usr/lib/kde4/kcm_screensaver.dll
 usr/lib/kde4/kcm_standard_actions.dll
 usr/lib/kde4/kcm_style.dll
 usr/lib/kde4/kcm_workspaceoptions.dll
-usr/lib/kde4/kcm_xinerama.dll
 usr/lib/kde4/kded_freespacenotifier.dll
 usr/lib/kde4/kded_keyboard.dll
+usr/lib/kde4/kded_ktouchpadenabler.dll
 usr/lib/kde4/kded_randrmonitor.dll
 usr/lib/kde4/keyboard_layout_widget.dll
 usr/lib/kde4/kfontviewpart.dll
@@ -44,7 +44,6 @@ usr/lib/kde4/libexec/fontinst_helper.exe
 usr/lib/kde4/libexec/fontinst_x11
 usr/lib/kde4/libexec/kcmdatetimehelper.exe
 usr/lib/kde4/libexec/kfontprint.exe
-usr/lib/kde4/libexec/test_kcm_xinerama.exe
 usr/lib/strigi/strigita_font.dll
 usr/share/applications/kde4/kfontview.desktop
 usr/share/applications/kde4/krandrtray.desktop
@@ -62,11 +61,8 @@ usr/share/kde4/apps/kaccess/kaccess.notifyrc
 usr/share/kde4/apps/kcminput/
 usr/share/kde4/apps/kcmkeyboard/
 usr/share/kde4/apps/kcmkeys/
-usr/share/kde4/apps/kconf_update/convertShortcuts.pl
-usr/share/kde4/apps/kconf_update/kaccel.upd
-usr/share/kde4/apps/kconf_update/kcmdisplayrc.upd
+usr/share/kde4/apps/kcmstyle/
 usr/share/kde4/apps/kconf_update/krdb_libpathwipe.upd
-usr/share/kde4/apps/kconf_update/mouse_cursor_theme.upd
 usr/share/kde4/apps/kcontrol/
 usr/share/kde4/apps/kdisplay/
 usr/share/kde4/apps/kfontinst/
@@ -95,6 +91,7 @@ usr/share/kde4/services/kcmlaunch.desktop
 usr/share/kde4/services/kcm_keyboard.desktop
 usr/share/kde4/services/kded/freespacenotifier.desktop
 usr/share/kde4/services/kded/keyboard.desktop
+usr/share/kde4/services/kded/ktouchpadenabler.desktop
 usr/share/kde4/services/kded/randrmonitor.desktop
 usr/share/kde4/services/keys.desktop
 usr/share/kde4/services/kfontviewpart.desktop
@@ -105,4 +102,3 @@ usr/share/kde4/services/ServiceMenus/installfont.desktop
 usr/share/kde4/services/standard_actions.desktop
 usr/share/kde4/services/style.desktop
 usr/share/kde4/services/workspaceoptions.desktop
-usr/share/kde4/services/xinerama.desktop

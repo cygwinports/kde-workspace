@@ -1,14 +1,3 @@
---- a/CMakeLists.txt
-+++ b/CMakeLists.txt
-@@ -170,7 +170,7 @@ macro_optional_add_subdirectory( doc )
-    endif(NOT WIN32)
- 
-    if(X11_Xau_FOUND AND X11_Xdmcp_FOUND)
--      add_subdirectory( kdm )
-+      macro_optional_add_subdirectory( kdm )
-    else(X11_Xau_FOUND AND X11_Xdmcp_FOUND)
-       message(STATUS "Xau lib or Xdmcp lib was missing. kdm will not compile")
-    endif(X11_Xau_FOUND AND X11_Xdmcp_FOUND)
 --- a/libs/CMakeLists.txt
 +++ b/libs/CMakeLists.txt
 @@ -5,7 +5,9 @@
