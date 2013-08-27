@@ -1,0 +1,17 @@
+--- origsrc/kde-workspace-4.10.5/kwin/scripting/scriptingutils.cpp	2013-06-28 12:10:44.442413400 -0500
++++ src/kde-workspace-4.10.5/kwin/scripting/scriptingutils.cpp	2013-08-26 21:12:49.986961700 -0500
+@@ -31,6 +31,7 @@ bool validateParameters(QScriptContext *
+     return true;
+ }
+ 
++#if 0
+ template<>
+ bool validateArgumentType<QVariant>(QScriptContext *context, int argument)
+ {
+@@ -42,5 +43,6 @@ bool validateArgumentType<QVariant>(QScr
+     }
+     return result;
+ }
++#endif
+ 
+ }

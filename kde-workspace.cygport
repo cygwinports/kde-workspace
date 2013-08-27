@@ -12,6 +12,8 @@ PATCH_URI="
 	4.8.3-kdm-optional.patch
 	4.4.2-kcontrol-compile.patch
 	4.3.5-ksysguardd-cygwin.patch
+	4.10.5-kwin-compile.patch
+	4.10.5-kwin-install.patch
 "
 
 DO_NOT_COMPILE="kdm powerdevil"
