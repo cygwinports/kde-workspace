@@ -2,7 +2,6 @@ usr/include/kde4/ksgrd/
 usr/include/kde4/ksysguard/
 usr/include/kde4/kworkspace/
 usr/include/kde4/plasmaclock/
-usr/include/kde4/solid/
 usr/include/kde4/taskmanager/
 usr/include/kde4/kscreensaver*
 usr/lib/cmake/
@@ -15,7 +14,6 @@ usr/lib/liblsofui.dll.a
 usr/lib/libplasmaclock.dll.a
 usr/lib/libplasmagenericshell.dll.a
 usr/lib/libprocess*
-usr/lib/libsolidcontrol*
 usr/lib/libtaskmanager.dll.a
 usr/lib/kde4/plugins/designer/ksignalplotterwidgets.dll
 usr/lib/kde4/plugins/designer/ksysguardlsofwidgets.dll

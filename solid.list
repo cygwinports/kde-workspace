@@ -1,13 +1,6 @@
 usr/bin/solid-action-desktop-gen.exe
-usr/lib/kde4/kcm_solid.dll
 usr/lib/kde4/kcm_solid_actions.dll
-usr/lib/kde4/solid_fakenet.dll
-usr/lib/kde4/solid_wicd.dll
-usr/share/icons/oxygen/*/apps/networkmanager.*
 usr/share/kde4/apps/kcmsolidactions/
 usr/share/kde4/apps/solid/
-usr/share/kde4/apps/solidfakenetbackend/
-usr/share/kde4/services/kcm_solid.desktop
 usr/share/kde4/services/solid-actions.desktop
-usr/share/kde4/services/solidbackends/
 usr/share/kde4/servicetypes/solid*

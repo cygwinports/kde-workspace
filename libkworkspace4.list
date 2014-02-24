@@ -9,8 +9,6 @@ usr/bin/cygplasmaclock-4.dll
 usr/bin/cygplasmagenericshell-4.dll
 usr/bin/cygprocesscore-4.dll
 usr/bin/cygprocessui-4.dll
-usr/bin/cygsolidcontrol-4.dll
-usr/bin/cygsolidcontrolifaces-4.dll
 usr/bin/cygtaskmanager-4.dll
 usr/lib/kde4/kded_kephal.dll
 usr/lib/kde4/libexec/ksysguardprocesslist_helper.exe

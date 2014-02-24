@@ -4,7 +4,10 @@ usr/bin/oxygen-settings.exe
 usr/lib/kde4/kstyle_oxygen_config.dll
 usr/lib/kde4/plugins/gui_platform/cygkde.dll
 usr/lib/kde4/plugins/styles/oxygen.dll
+usr/share/icons/KDE_Classic/
 usr/share/icons/Oxygen_*
+usr/share/kde4/apps/kconf_update/oxygen.upd
+usr/share/kde4/apps/kconf_update/update_oxygen.pl
 usr/share/kde4/apps/kstyle/themes/oxygen.themerc
 usr/share/kde4/apps/kstyle/themes/qtcde.themerc
 usr/share/kde4/apps/kstyle/themes/qtcleanlooks.themerc
