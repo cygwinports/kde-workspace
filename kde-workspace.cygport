@@ -23,7 +23,7 @@ PKG_NAMES="${PN} kcheckpass kcminit kcontrol
            ksplash kstartupconfig4 ksysguard ksystraycmd kwin kwrited plasma
            solid systemsettings kde4-kstyle-oxygen
            libkworkspace4 libkworkspace-devel"
-kde_workspace_REQUIRES="dbus kcminit ksmserver ksplash kstartupconfig4 kwin plasma mkfontdir xmessage xprop xrdb xset xsetroot"
+kde_workspace_REQUIRES="dbus kcminit ksmserver ksplash kstartupconfig4 kwin plasma mkfontdir pulseaudio-module-x11 xmessage xprop xrdb xset xsetroot"
 kde_workspace_OBSOLETES="kdebase-startkde"
 kde_workspace_CONTENTS="etc/postinstall/ usr/bin/startkde usr/share/doc/${PN}/"
 kcheckpass_SUMMARY="KDE password authentication program"
