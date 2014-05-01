@@ -1,11 +1,11 @@
 inherit kde4 python
 
 NAME="kde-workspace"
-VERSION=4.11.5
+VERSION=4.11.9
 RELEASE=1
 CATEGORY="KDE"
 SUMMARY="KDE desktop components"
-
+SRC_URI="mirror://kde/stable/4.12.5/src/${NAME}-${VERSION}.tar.xz"
 PATCH_URI="
 	4.5.5-install-targets-default-args.patch
 	4.3.4-libprocesscore-cygwin.patch
