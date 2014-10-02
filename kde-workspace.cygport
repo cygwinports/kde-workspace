@@ -20,7 +20,7 @@ DO_NOT_COMPILE="kdm powerdevil"
 
 PKG_NAMES="${NAME} ksysguard kwin systemsettings kde4-kstyle-oxygen
            libkworkspace4 libkworkspace-devel"
-kde_workspace_REQUIRES="dbus kde4-kstyle-oxygen kwin systemsettings mkfontdir pulseaudio-module-x11 xmessage xprop xrdb xset xsetroot"
+kde_workspace_REQUIRES="dbus iso-codes kactivities kde-runtime kde4-kstyle-oxygen kwin systemsettings mkfontdir pulseaudio-module-x11 xmessage xprop xrdb xset xsetroot"
 kde_workspace_OBSOLETES="kdebase-startkde kcheckpass kcminit kcontrol khotkeys kinfocenter klipper kmenuedit krunner kscreensaver ksmserver ksplash kstartupconfig4 ksystraycmd kwrited plasma solid"
 kde_workspace_CONTENTS="
 	--exclude=kcm_kwin*
