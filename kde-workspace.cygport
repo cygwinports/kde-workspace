@@ -20,7 +20,7 @@ DO_NOT_COMPILE="kdm powerdevil"
 
 PKG_NAMES="${NAME} ksysguard kwin systemsettings kde4-kstyle-oxygen
            libkworkspace4 libkworkspace-devel"
-kde_workspace_REQUIRES="dbus iso-codes kactivities kde-runtime kde4-kstyle-oxygen kwin systemsettings mkfontdir pulseaudio-module-x11 xmessage xprop xrdb xset xsetroot"
+kde_workspace_REQUIRES="baloo dbus iso-codes kactivities kde-baseapps kde-runtime kde4-kstyle-oxygen kwin systemsettings mkfontdir pulseaudio-module-x11 xmessage xprop xrdb xset xsetroot"
 kde_workspace_OBSOLETES="kdebase-startkde kcheckpass kcminit kcontrol khotkeys kinfocenter klipper kmenuedit krunner kscreensaver ksmserver ksplash kstartupconfig4 ksystraycmd kwrited plasma solid"
 kde_workspace_CONTENTS="
 	--exclude=kcm_kwin*
@@ -285,7 +285,7 @@ libkworkspace4_CONTENTS="
 	usr/bin/cygtaskmanager-4.dll
 	usr/bin/cygweather_ion-6.dll
 "
-libkworkspace_devel_REQUIRES="libkdecore-devel libQtCore4-devel libQtDBus4-devel libQtGui4-devel libQtNetwork4-devel libQtXml4-devel libsoprano-devel libX11-devel"
+libkworkspace_devel_REQUIRES="libkdecore-devel libQtCore4-devel libQtDBus4-devel libQtGui4-devel libQtNetwork4-devel libQtXml4-devel libX11-devel"
 libkworkspace_devel_SUMMARY="KDE workspace desktop libraries (development)"
 libkworkspace_devel_CONTENTS="
 	usr/include/kde4/KDE/Plasma/
