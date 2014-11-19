@@ -1,11 +1,11 @@
 inherit kde4 python
 
 NAME="kde-workspace"
-VERSION=4.11.12
+VERSION=4.11.14
 RELEASE=1
 CATEGORY="KDE"
 SUMMARY="KDE desktop components"
-SRC_URI="mirror://kde/stable/4.14.1/src/${NAME}-${VERSION}.tar.xz"
+SRC_URI="mirror://kde/stable/4.14.3/src/${NAME}-${VERSION}.tar.xz"
 PATCH_URI="
 	4.5.5-install-targets-default-args.patch
 	4.3.4-libprocesscore-cygwin.patch
@@ -14,6 +14,7 @@ PATCH_URI="
 	4.3.5-ksysguardd-cygwin.patch
 	4.10.5-kwin-compile.patch
 	4.10.5-kwin-install.patch
+	4.11.14-kinfocenter-cygwin.patch
 "
 
 DO_NOT_COMPILE="kdm powerdevil"
