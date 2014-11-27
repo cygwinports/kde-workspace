@@ -2,7 +2,7 @@ inherit kde4 python
 
 NAME="kde-workspace"
 VERSION=4.11.14
-RELEASE=1
+RELEASE=2
 CATEGORY="KDE"
 SUMMARY="KDE desktop components"
 SRC_URI="mirror://kde/stable/4.14.3/src/${NAME}-${VERSION}.tar.xz"
@@ -21,13 +21,14 @@ DO_NOT_COMPILE="kdm powerdevil"
 
 PKG_NAMES="${NAME} ksysguard kwin systemsettings kde4-kstyle-oxygen
            libkworkspace4 libkworkspace-devel"
-kde_workspace_REQUIRES="baloo dbus iso-codes kactivities kde-baseapps kde-runtime kde4-kstyle-oxygen kwin systemsettings mkfontdir pulseaudio-module-x11 tzcode xmessage xprop xrdb xset xsetroot"
+kde_workspace_REQUIRES="baloo dbus-x11 iso-codes kactivities kde-baseapps kde-runtime kde4-kstyle-oxygen kwin systemsettings mkfontdir pulseaudio-module-x11 run tzcode xinit xmessage xprop xrdb xset xsetroot"
 kde_workspace_OBSOLETES="kdebase-startkde kcheckpass kcminit kcontrol khotkeys kinfocenter klipper kmenuedit krunner kscreensaver ksmserver ksplash kstartupconfig4 ksystraycmd kwrited plasma solid"
 kde_workspace_CONTENTS="
 	--exclude=kcm_kwin*
 	etc/dbus-1/system.d/org.kde.fontinst.conf
 	etc/dbus-1/system.d/org.kde.kcontrol.kcmclock.conf
 	etc/postinstall/
+	etc/preremove/
 	usr/bin/cygkdeinit4_kaccess.dll
 	usr/bin/cygkdeinit4_kcminit*.dll
 	usr/bin/cygkdeinit4_klipper.dll
@@ -201,6 +202,7 @@ kde_workspace_CONTENTS="
 	usr/share/kde4/servicetypes/plasma*.desktop
 	usr/share/kde4/servicetypes/screensaver.desktop
 	usr/share/kde4/servicetypes/solid*
+	usr/share/xsessions/kde-plasma*.desktop
 "
 kde4_kstyle_oxygen_SUMMARY="KDE4 Oxygen style"
 kde4_kstyle_oxygen_CONTENTS="
@@ -343,3 +345,14 @@ PKG_IGNORE="usr/lib/libkfontinst* usr/lib/libkhotkeysprivate.* usr/lib/libkickof
             usr/lib/liboxygen* usr/share/doc/HTML/en/kdm/"
 
 DIFF_EXCLUDES="symlinks"
+
+src_install() {
+	cd ${B}
+	kde4_install
+
+	sed -e 's|${BIN_INSTALL_DIR}|/usr/bin|' ${S}/kdm/kfrontend/sessions/kde-plasma.desktop.cmake > kde-plasma.desktop
+	sed -e 's|${BIN_INSTALL_DIR}|/usr/bin|' ${S}/kdm/kfrontend/sessions/kde-plasma-safe.desktop.cmake > kde-plasma-safe.desktop
+
+	insinto /usr/share/xsessions
+	doins kde-plasma{,-safe}.desktop
+}
