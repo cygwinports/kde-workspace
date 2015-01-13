@@ -2,7 +2,7 @@ inherit kde4 python
 
 NAME="kde-workspace"
 VERSION=4.11.14
-RELEASE=2
+RELEASE=3
 CATEGORY="KDE"
 SUMMARY="KDE desktop components"
 SRC_URI="mirror://kde/stable/4.14.3/src/${NAME}-${VERSION}.tar.xz"
@@ -25,6 +25,7 @@ kde_workspace_REQUIRES="baloo dbus-x11 iso-codes kactivities kde-baseapps kde-ru
 kde_workspace_OBSOLETES="kdebase-startkde kcheckpass kcminit kcontrol khotkeys kinfocenter klipper kmenuedit krunner kscreensaver ksmserver ksplash kstartupconfig4 ksystraycmd kwrited plasma solid"
 kde_workspace_CONTENTS="
 	--exclude=kcm_kwin*
+	etc/X11/xinit/Xclients.d/
 	etc/dbus-1/system.d/org.kde.fontinst.conf
 	etc/dbus-1/system.d/org.kde.kcontrol.kcmclock.conf
 	etc/postinstall/
