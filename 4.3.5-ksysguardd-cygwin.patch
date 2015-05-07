@@ -1278,7 +1278,7 @@
 +#endif
 --- origsrc/kdebase-workspace-4.3.5/ksysguard/ksysguardd/Cygwin/diskstat.c	1969-12-31 18:00:00.000000000 -0600
 +++ src/kdebase-workspace-4.3.5/ksysguard/ksysguardd/Cygwin/diskstat.c	2010-02-01 20:09:11.163820000 -0600
-@@ -0,0 +1,293 @@
+@@ -0,0 +1,294 @@
 +/*
 +    KSysGuard, the KDE System Guard
 +
@@ -1305,6 +1305,7 @@
 +#include <stdio.h>
 +#include <stdlib.h>
 +#include <string.h>
++#include <strings.h>
 +#include <sys/stat.h>
 +#include <sys/vfs.h>
 +#include <time.h>
