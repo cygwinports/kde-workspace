@@ -95,11 +95,6 @@ kde_workspace_CONTENTS="
 	usr/share/applications/kde4/kmenuedit.desktop
 	usr/share/applications/kde4/krandrtray.desktop
 	usr/share/autostart/
-	usr/share/dbus-1/interfaces/com.canonical.AppMenu.Registrar.xml
-	usr/share/dbus-1/interfaces/org.kde.kded.appmenu.xml
-	usr/share/dbus-1/interfaces/org.kde.khotkeys.xml
-	usr/share/dbus-1/interfaces/org.kde.krunner.App.xml
-	usr/share/dbus-1/interfaces/org.kde.KSMServerInterface.xml
 	usr/share/dbus-1/services/org.kde.fontinst.service
 	usr/share/dbus-1/services/org.kde.krunner.service
 	usr/share/dbus-1/system-services/org.kde.fontinst.service
@@ -253,7 +248,6 @@ kwin_CONTENTS="
 	usr/lib/kde4/kcm_kwin*
 	usr/lib/kde4/kwin*
 	usr/lib/kde4/libexec/kwin_*
-	usr/share/dbus-1/interfaces/org.kde.KWin.xml
 	usr/share/icons/oxygen/*/apps/kcmkwm.*
 	usr/share/icons/oxygen/*/apps/kwin.*
 	usr/share/kde4/apps/kconf_update/kwin*
@@ -327,6 +321,12 @@ libkworkspace_devel_CONTENTS="
 	usr/lib/kde4/plugins/designer/ksignalplotterwidgets.dll
 	usr/lib/kde4/plugins/designer/ksysguardlsofwidgets.dll
 	usr/lib/kde4/plugins/designer/ksysguardwidgets.dll
+	usr/share/dbus-1/interfaces/com.canonical.AppMenu.Registrar.xml
+	usr/share/dbus-1/interfaces/org.kde.kded.appmenu.xml
+	usr/share/dbus-1/interfaces/org.kde.khotkeys.xml
+	usr/share/dbus-1/interfaces/org.kde.krunner.App.xml
+	usr/share/dbus-1/interfaces/org.kde.KSMServerInterface.xml
+	usr/share/dbus-1/interfaces/org.kde.KWin.xml
 	usr/share/kde4/apps/cmake/
 "
 systemsettings_SUMMARY="KDE preferences GUI manager"
