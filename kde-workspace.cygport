@@ -1,11 +1,11 @@
 inherit kde4 python
 
 NAME="kde-workspace"
-VERSION=4.11.20
+VERSION=4.11.21
 RELEASE=1
 CATEGORY="KDE"
 SUMMARY="KDE desktop components"
-SRC_URI="mirror://kde/stable/applications/15.04.2/src/${NAME}-${VERSION}.tar.xz"
+SRC_URI="mirror://kde/stable/applications/15.04.3/src/${NAME}-${VERSION}.tar.xz"
 PATCH_URI="
 	4.5.5-install-targets-default-args.patch
 	4.3.4-libprocesscore-cygwin.patch
@@ -224,6 +224,7 @@ khotkeys_CONTENTS="
 	usr/lib/kde4/kcm_hotkeys.dll
 	usr/lib/kde4/kded_khotkeys.dll
 	usr/share/doc/HTML/en/kcontrol/khotkeys/
+	usr/share/doc/khotkeys/
 	usr/share/kde4/apps/khotkeys/
 	usr/share/kde4/services/kded/khotkeys.desktop
 	usr/share/kde4/services/khotkeys.desktop
