@@ -1,414 +1,49 @@
 inherit kde4 python
 
 NAME="kde-workspace"
-VERSION=4.11.21
+VERSION=4.11.22
 RELEASE=1
 CATEGORY="KDE"
-SUMMARY="KDE desktop components"
-SRC_URI="mirror://kde/stable/applications/15.04.3/src/${NAME}-${VERSION}.tar.xz"
+SUMMARY="KDE 4 desktop components"
+SRC_URI="mirror://kde/stable/applications/15.08.0/src/${NAME}-${VERSION}.tar.xz"
 PATCH_URI="
+	http://pkgs.fedoraproject.org/cgit/rpms/kde-workspace.git/plain/kde-workspace-strigi.patch
 	4.5.5-install-targets-default-args.patch
-	4.3.4-libprocesscore-cygwin.patch
-	4.8.3-kdm-optional.patch
-	4.4.2-kcontrol-compile.patch
-	4.3.5-ksysguardd-cygwin.patch
-	4.10.5-kwin-compile.patch
-	4.10.5-kwin-install.patch
-	4.11.14-kinfocenter-cygwin.patch
+	4.11.22-libs-only-kworkspace.patch
 "
 
-DO_NOT_COMPILE="kdm powerdevil"
+# conflicts with Plasma 5
+DO_NOT_COMPILE="kdm systemsettings kcheckpass kwin ksmserver ksplash powerdevil
+		ksysguard klipper kmenuedit krunner solid-actions-kcm
+		kstartupconfig freespacenotifier kscreensaver kinfocenter
+		ktouchpadenabler kcminit khotkeys kwrited appmenu cursors
+		plasma kstyles statusnotifierwatcher kcontrol doc"
 
-PKG_NAMES="${NAME} khotkeys kinfocenter kmenuedit ksysguard kwin kwrited
-           systemsettings kde4-kstyle-oxygen
-           libkworkspace4 libkworkspace-devel"
-kde_workspace_REQUIRES="baloo dbus-x11 iso-codes kactivities kde-baseapps kde-runtime kde4-kstyle-oxygen khotkeys kinfocenter kmenuedit kwin systemsettings mkfontdir pulseaudio-module-x11 run tzdata xinit xmessage xprop xrdb xset xsetroot"
-kde_workspace_OBSOLETES="kdebase-startkde kcheckpass kcminit kcontrol klipper krunner kscreensaver ksmserver ksplash kstartupconfig4 ksystraycmd plasma solid"
+PKG_NAMES="${NAME} ksystraycmd libkworkspace4 libkworkspace-devel"
+kde_workspace_REQUIRES="plasma-workspace breeze-kde4 oxygen-kde4"
+kde_workspace_OBSOLETES="kdebase-startkde kcheckpass kcminit kcontrol klipper krunner kscreensaver ksmserver ksplash kstartupconfig4 plasma solid"
 kde_workspace_CONTENTS="
-	--exclude=kcm_kwin* --exclude=*hotkeys*
-	etc/X11/xinit/Xclients.d/
-	etc/dbus-1/system.d/org.kde.fontinst.conf
-	etc/dbus-1/system.d/org.kde.kcontrol.kcmclock.conf
-	etc/postinstall/
-	etc/preremove/
-	usr/bin/cygkdeinit4_kaccess.dll
-	usr/bin/cygkdeinit4_kcminit*.dll
-	usr/bin/cygkdeinit4_klipper.dll
-	usr/bin/cygkdeinit4_krunner.dll
-	usr/bin/cygkdeinit4_ksmserver.dll
-	usr/bin/cygkdeinit4_plasma*
-	usr/bin/cygkfontinst-4.dll
-	usr/bin/cygkfontinstui-4.dll
-	usr/bin/cygkickoff.dll
-	usr/bin/kaccess.exe
-	usr/bin/kapplymousetheme.exe
-	usr/bin/kcheckrunning.exe
-	usr/bin/kcminit.exe
-	usr/bin/kcminit_startup.exe
-	usr/bin/kdostartupconfig4.exe
-	usr/bin/kfontinst.exe
-	usr/bin/kfontview.exe
-	usr/bin/klipper.exe
-	usr/bin/krandrstartup
-	usr/bin/krandrtray.exe
-	usr/bin/krdb
-	usr/bin/krunner.exe
-	usr/bin/ksmserver.exe
-	usr/bin/ksplash*
-	usr/bin/kstartupconfig4.exe
-	usr/bin/ksystraycmd.exe
-	usr/bin/*.kss.exe
-	usr/bin/plasm*
-	usr/bin/solid-action-desktop-gen.exe
-	usr/bin/startkde
-	usr/lib/kconf_update_bin/force_krunner_lock_shortcut_unreg.exe
-	usr/lib/kconf_update_bin/krdb_clearlibrarypath.exe
-	usr/lib/kconf_update_bin/notifications-to-orgkdenotifications.exe
-	usr/lib/kconf_update_bin/plasma-add-shortcut-to-menu.exe
-	usr/lib/kconf_update_bin/plasma-to-plasma-desktop.exe
-	usr/lib/kde4/fontthumbnail.dll
-	usr/lib/kde4/kcm_access.dll
-	usr/lib/kde4/kcm_autostart.dll
-	usr/lib/kde4/kcm_bell.dll
-	usr/lib/kde4/kcm_clock.dll
-	usr/lib/kde4/kcm_colors.dll
-	usr/lib/kde4/kcm_cursortheme.dll
-	usr/lib/kde4/kcm_desktoppaths.dll
-	usr/lib/kde4/kcm_desktoptheme.dll
-	usr/lib/kde4/kcm_display.dll
-	usr/lib/kde4/kcm_fontinst.dll
-	usr/lib/kde4/kcm_fonts.dll
-	usr/lib/kde4/kcm_input.dll
-	usr/lib/kde4/kcm_keyboard.dll
-	usr/lib/kde4/kcm_keys.dll
-	usr/lib/kde4/kcm_krunner_kill.dll
-	usr/lib/kde4/kcm_ksplashthemes.dll
-	usr/lib/kde4/kcm_launch.dll
-	usr/lib/kde4/kcm_randr.dll
-	usr/lib/kde4/kcm_screensaver.dll
-	usr/lib/kde4/kcm_smserver.dll
-	usr/lib/kde4/kcm_solid_actions.dll
-	usr/lib/kde4/kcm_standard_actions.dll
-	usr/lib/kde4/kcm_style.dll
-	usr/lib/kde4/kcm_workspaceoptions.dll
-	usr/lib/kde4/kded_*.dll
-	usr/lib/kde4/keyboard_layout_widget.dll
-	usr/lib/kde4/kfontviewpart.dll
-	usr/lib/kde4/kio_fonts.dll
-	usr/lib/kde4/krunner_*.dll
-	usr/lib/kde4/ion_*.dll
-	usr/lib/kde4/libexec/fontinst.exe
-	usr/lib/kde4/libexec/fontinst_helper.exe
-	usr/lib/kde4/libexec/fontinst_x11
-	usr/lib/kde4/libexec/kcheckpass.exe
-	usr/lib/kde4/libexec/kcmdatetimehelper.exe
-	usr/lib/kde4/libexec/kfontprint.exe
-	usr/lib/kde4/libexec/kscreenlocker_greet.exe
-	usr/lib/kde4/plasma*
-	usr/lib/python2.7/site-packages/PyKDE4/plasmascript.*
-	usr/lib/strigi/strigita_font.dll
-	usr/share/applications/kde4/kfontview.desktop
-	usr/share/applications/kde4/klipper.desktop
-	usr/share/applications/kde4/krandrtray.desktop
-	usr/share/autostart/klipper.desktop
-	usr/share/autostart/krunner.desktop
-	usr/share/autostart/plasma-desktop.desktop
-	usr/share/autostart/plasma.desktop
-	usr/share/dbus-1/services/org.kde.fontinst.service
-	usr/share/dbus-1/services/org.kde.krunner.service
-	usr/share/dbus-1/system-services/org.kde.fontinst.service
-	usr/share/dbus-1/system-services/org.kde.kcontrol.kcmclock.service
-	usr/share/doc/HTML/en/kcontrol/
-	usr/share/doc/HTML/en/kfontview/
-	usr/share/doc/HTML/en/klipper/
-	usr/share/doc/HTML/en/plasma-desktop/
-	usr/share/doc/kde-workspace/
-	usr/share/icons/hicolor/*/apps/ksplash.*
-	usr/share/icons/oxygen/*/apps/kfontview.*
-	usr/share/icons/oxygen/*/mimetypes/fonts-package.*
-	usr/share/icons/oxygen/scalable/apps/preferences-desktop-font-installer.svgz
-	usr/share/kde4/apps/color-schemes/
-	usr/share/kde4/apps/desktoptheme/
-	usr/share/kde4/apps/freespacenotifier/
-	usr/share/kde4/apps/kaccess/kaccess.notifyrc
-	usr/share/kde4/apps/katepart/syntax/plasma-desktop-js.xml
-	usr/share/kde4/apps/kcminput/
-	usr/share/kde4/apps/kcmkeyboard/
-	usr/share/kde4/apps/kcmkeys/
-	usr/share/kde4/apps/kcmsolidactions/
-	usr/share/kde4/apps/kcmstyle/
-	usr/share/kde4/apps/kconf_update/klipper-kconfigxt.upd
-	usr/share/kde4/apps/kconf_update/krdb_libpathwipe.upd
-	usr/share/kde4/apps/kconf_update/kscreenlocker_locksession-shortcut.upd
-	usr/share/kde4/apps/kconf_update/ksmserver_shortcuts.upd
-	usr/share/kde4/apps/kconf_update/notifications-to-orgkdenotifications.upd
-	usr/share/kde4/apps/kconf_update/plasma-add-shortcut-to-menu.upd
-	usr/share/kde4/apps/kconf_update/plasma-to-plasmadesktop-shortcuts.upd
-	usr/share/kde4/apps/kconf_update/plasmarc-to-plasmadesktoprc.upd
-	usr/share/kde4/apps/kcontrol/
-	usr/share/kde4/apps/kdisplay/
-	usr/share/kde4/apps/kfontinst/
-	usr/share/kde4/apps/kfontview/
-	usr/share/kde4/apps/konqsidebartng/virtual_folders/services/fonts.desktop
-	usr/share/kde4/apps/ksmserver/
-	usr/share/kde4/apps/ksplash/
-	usr/share/kde4/apps/kthememanager/
-	usr/share/kde4/apps/plasma*/
-	usr/share/kde4/apps/solid/
-	usr/share/kde4/config/activities.knsrc
-	usr/share/kde4/config/colorschemes.knsrc
-	usr/share/kde4/config/kfontinst.knsrc
-	usr/share/kde4/config/ksplash.knsrc
-	usr/share/kde4/config/plasma-overlayrc
-	usr/share/kde4/config/plasma-themes.knsrc
-	usr/share/kde4/config/wallpaper.knsrc
-	usr/share/kde4/config/xcursor.knsrc
-	usr/share/kde4/config.kcfg/freespacenotifier.kcfg
-	usr/share/kde4/config.kcfg/klaunch.kcfg
-	usr/share/kde4/config.kcfg/plasma-shell-desktop.kcfg
-	usr/share/kde4/services/autostart.desktop
-	usr/share/kde4/services/bell.desktop
-	usr/share/kde4/services/clock.desktop
-	usr/share/kde4/services/colors.desktop
-	usr/share/kde4/services/cursortheme.desktop
-	usr/share/kde4/services/desktoppath.desktop
-	usr/share/kde4/services/desktoptheme.desktop
-	usr/share/kde4/services/display.desktop
-	usr/share/kde4/services/fontinst.desktop
-	usr/share/kde4/services/fonts.desktop
-	usr/share/kde4/services/fonts.protocol
-	usr/share/kde4/services/fontthumbnail.desktop
-	usr/share/kde4/services/ion-*.desktop
-	usr/share/kde4/services/kaccess.desktop
-	usr/share/kde4/services/kcm_keyboard.desktop
-	usr/share/kde4/services/kcmaccess.desktop
-	usr/share/kde4/services/kcmlaunch.desktop
-	usr/share/kde4/services/kcmsmserver.desktop
-	usr/share/kde4/services/kded/*.desktop
-	usr/share/kde4/services/keys.desktop
-	usr/share/kde4/services/kfontviewpart.desktop
-	usr/share/kde4/services/ksplashthememgr.desktop
-	usr/share/kde4/services/mouse.desktop
-	usr/share/kde4/services/plasma*.desktop
-	usr/share/kde4/services/randr.desktop
-	usr/share/kde4/services/recentdocuments.desktop
-	usr/share/kde4/services/ScreenSavers/
-	usr/share/kde4/services/screensaver.desktop
-	usr/share/kde4/services/ServiceMenus/installfont.desktop
-	usr/share/kde4/services/solid-actions.desktop
-	usr/share/kde4/services/standard_actions.desktop
-	usr/share/kde4/services/style.desktop
-	usr/share/kde4/services/workspaceoptions.desktop
-	usr/share/kde4/servicetypes/plasma*.desktop
-	usr/share/kde4/servicetypes/screensaver.desktop
-	usr/share/kde4/servicetypes/solid*
-	usr/share/xsessions/kde-plasma*.desktop
-"
-kde4_kstyle_oxygen_SUMMARY="KDE4 Oxygen style"
-kde4_kstyle_oxygen_CONTENTS="
-	usr/bin/cygoxygenstyle*
-	usr/bin/oxygen-demo.exe
-	usr/bin/oxygen-settings.exe
-	usr/lib/kde4/kstyle_oxygen_config.dll
 	usr/lib/kde4/plugins/gui_platform/cygkde.dll
-	usr/lib/kde4/plugins/styles/oxygen.dll
-	usr/share/icons/KDE_Classic/
-	usr/share/icons/Oxygen_*
-	usr/share/kde4/apps/kconf_update/oxygen.upd
-	usr/share/kde4/apps/kconf_update/update_oxygen.pl
-	usr/share/kde4/apps/kstyle/themes/
+	usr/share/doc/${NAME}
 "
-khotkeys_SUMMARY="KDE keyboard shortcuts manager"
-khotkeys_CONTENTS="
-	usr/bin/cygkhotkeysprivate-4.dll
-	usr/lib/kde4/kcm_hotkeys.dll
-	usr/lib/kde4/kded_khotkeys.dll
-	usr/share/doc/HTML/en/kcontrol/khotkeys/
-	usr/share/doc/khotkeys/
-	usr/share/kde4/apps/khotkeys/
-	usr/share/kde4/services/kded/khotkeys.desktop
-	usr/share/kde4/services/khotkeys.desktop
+ksystraycmd_CONTENTS="
+	usr/bin/ksystraycmd.exe
+	usr/share/doc/ksystraycmd/
 "
-kinfocenter_SUMMARY="KDE system status"
-kinfocenter_CONTENTS="
-	usr/bin/kinfocenter.exe
-	usr/lib/kde4/devinfo.dll
-	usr/lib/kde4/kcm_info.dll
-	usr/lib/kde4/kcm_infosummary.dll
-	usr/lib/kde4/kcm_memory.dll
-	usr/lib/kde4/kcm_nic.dll
-	usr/lib/kde4/kcm_opengl.dll
-	usr/lib/kde4/kcm_pci.dll
-	usr/lib/kde4/kcm_samba.dll
-	usr/lib/kde4/kcm_usb.dll
-	usr/share/applications/kde4/kinfocenter.desktop
-	usr/share/doc/HTML/en/kinfocenter/
-	usr/share/kde4/apps/kcmusb/usb.ids
-	usr/share/kde4/apps/kinfocenter/kinfocenterui.rc
-	usr/share/kde4/services/deviceinfocategory.desktop
-	usr/share/kde4/services/devinfo.desktop
-	usr/share/kde4/services/dma.desktop
-	usr/share/kde4/services/graphicalinfocategory.desktop
-	usr/share/kde4/services/interrupts.desktop
-	usr/share/kde4/services/ioports.desktop
-	usr/share/kde4/services/kcmusb.desktop
-	usr/share/kde4/services/kcm_infosummary.desktop
-	usr/share/kde4/services/kcm_memory.desktop
-	usr/share/kde4/services/kcm_pci.desktop
-	usr/share/kde4/services/lostfoundcategory.desktop
-	usr/share/kde4/services/networkinfocategory.desktop
-	usr/share/kde4/services/nic.desktop
-	usr/share/kde4/services/opengl.desktop
-	usr/share/kde4/services/scsi.desktop
-	usr/share/kde4/services/smbstatus.desktop
-	usr/share/kde4/services/xserver.desktop
-	usr/share/kde4/servicetypes/kinfocentercategory.desktop
-"
-kmenuedit_SUMMARY="KDE menu editor"
-kmenuedit_CONTENTS="
-	usr/bin/cygkdeinit4_kmenuedit.dll
-	usr/bin/kmenuedit.exe
-	usr/share/applications/kde4/kmenuedit.desktop
-	usr/share/doc/HTML/en/kmenuedit/
-	usr/share/icons/hicolor/*/apps/kmenuedit.*
-	usr/share/kde4/apps/kmenuedit/
-"
-ksysguard_SUMMARY="KDE system monitor"
-ksysguard_CONTENTS="
-	etc/dbus-1/system.d/org.kde.ksysguard.processlisthelper.conf
-	etc/ksysguarddrc
-	usr/bin/cygkdeinit4_ksysguard.dll
-	usr/bin/ksysguard.exe
-	usr/bin/ksysguardd.exe
-	usr/lib/kde4/libexec/ksysguardprocesslist_helper.exe
-	usr/share/applications/kde4/ksysguard.desktop
-	usr/share/dbus-1/system-services/org.kde.ksysguard.processlisthelper.service
-	usr/share/doc/HTML/en/ksysguard/
-	usr/share/icons/oxygen/16x16/apps/computer.png
-	usr/share/icons/oxygen/16x16/apps/daemon.png
-	usr/share/icons/oxygen/16x16/apps/kdeapp.png
-	usr/share/icons/oxygen/16x16/apps/kernel.png
-	usr/share/icons/oxygen/16x16/apps/ksysguardd.png
-	usr/share/icons/oxygen/16x16/apps/running.png
-	usr/share/icons/oxygen/16x16/apps/shell.png
-	usr/share/icons/oxygen/16x16/apps/unknownapp.png
-	usr/share/icons/oxygen/16x16/apps/waiting.png
-	usr/share/kde4/apps/ksysguard/
-	usr/share/kde4/config/ksysguard.knsrc
-	usr/share/doc/ksysguard/
-"
-kwin_SUMMARY="KDE window manager"
-kwin_CONTENTS="
-	usr/bin/cygkdeinit4_kwin*.dll
-	usr/bin/kwin*.exe
-	usr/bin/oxygen-shadow-demo.exe
-	usr/lib/kconf_update_bin/kwin_update_*
-	usr/lib/kde4/imports/org/kde/kwin/
-	usr/lib/kde4/kcm_kwin*
-	usr/lib/kde4/kwin*
-	usr/lib/kde4/libexec/kwin_*
-	usr/share/icons/oxygen/*/apps/kcmkwm.*
-	usr/share/icons/oxygen/*/apps/kwin.*
-	usr/share/kde4/apps/kconf_update/kwin*
-	usr/share/kde4/apps/kwin/
-	usr/share/kde4/config/aurorae.knsrc
-	usr/share/kde4/config/kwin*
-	usr/share/kde4/config.kcfg/kwin.kcfg
-	usr/share/kde4/services/desktop.desktop
-	usr/share/kde4/services/kwin*
-	usr/share/kde4/servicetypes/kwin*.desktop
-	usr/share/sounds/pop.wav
-	usr/share/doc/kwin/
-"
-kwrited_SUMMARY="KDE write daemon"
-kwrited_CONTENTS="
-	usr/bin/kwrited.exe
-	usr/share/autostart/kwrited-autostart.desktop
-	usr/share/kde4/apps/kwrited/
-"
-libkworkspace4_SUMMARY="KDE workspace desktop libraries (runtime)"
+libkworkspace4_CATEGORY="Libs"
+libkworkspace4_SUMMARY="KDE 4 workspace desktop libraries (runtime)"
 libkworkspace4_CONTENTS="
-	usr/bin/cygkdecorations-4.dll
-	usr/bin/cygkephal-4.dll
-	usr/bin/cygkscreensaver-5.dll
-	usr/bin/cygksgrd-4.dll
-	usr/bin/cygksignalplotter-4.dll
-	usr/bin/cygkwineffects-1.dll
-	usr/bin/cygkwinglesutils-1.dll
-	usr/bin/cygkwinglutils-1.dll
 	usr/bin/cygkworkspace-4.dll
-	usr/bin/cyglsofui-4.dll
-	usr/bin/cygplasmaclock-4.dll
-	usr/bin/cygplasmagenericshell-4.dll
-	usr/bin/cygplasma-geolocation-interface-4.dll
-	usr/bin/cygplasma_applet-system-monitor-4.dll
-	usr/bin/cygprocesscore-4.dll
-	usr/bin/cygprocessui-4.dll
-	usr/bin/cygsystemsettingsview-2.dll
-	usr/bin/cygtaskmanager-4.dll
-	usr/bin/cygweather_ion-6.dll
 "
-libkworkspace_devel_REQUIRES="libkdecore-devel libQtCore4-devel libQtDBus4-devel libQtGui4-devel libQtNetwork4-devel libQtXml4-devel libX11-devel"
-libkworkspace_devel_SUMMARY="KDE workspace desktop libraries (development)"
+libkworkspace_devel_CATEGORY="Libs"
+libkworkspace_devel_SUMMARY="KDE 4 workspace desktop libraries (development)"
+libkworkspace_devel_REQUIRES="libkdecore-devel libQtCore4-devel"
 libkworkspace_devel_CONTENTS="
-	usr/include/kde4/KDE/Plasma/
-	usr/include/kde4/ksgrd/
-	usr/include/kde4/ksysguard/
 	usr/include/kde4/kworkspace/
-	usr/include/kde4/plasma/
-	usr/include/kde4/plasmaclock/
-	usr/include/kde4/systemsettingsview/
-	usr/include/kde4/taskmanager/
-	usr/include/kde4/kcommondecoration.h
-	usr/include/kde4/kdecoration*.h
-	usr/include/kde4/kscreensaver*.h
-	usr/include/kde4/kwin*.h
-	usr/lib/cmake/
-	usr/lib/libkdecorations.dll.a
-	usr/lib/libkephal.dll.a
-	usr/lib/libkscreensaver.dll.a
-	usr/lib/libksgrd.dll.a
-	usr/lib/libksignalplotter.dll.a
-	usr/lib/libkwineffects.dll.a
-	usr/lib/libkwinglesutils.dll.a
-	usr/lib/libkwinglutils.dll.a
+	usr/lib/cmake/KDE4Workspace/
 	usr/lib/libkworkspace.dll.a
-	usr/lib/liblsofui.dll.a
-	usr/lib/libplasmaclock.dll.a
-	usr/lib/libplasmagenericshell.dll.a
-	usr/lib/libplasma-geolocation-interface.dll.a
-	usr/lib/libplasma_applet-system-monitor.dll.a
-	usr/lib/libprocesscore.dll.a
-	usr/lib/libprocessui.dll.a
-	usr/lib/libsystemsettingsview.dll.a
-	usr/lib/libtaskmanager.dll.a
-	usr/lib/libweather_ion.dll.a
-	usr/lib/kde4/plugins/designer/ksignalplotterwidgets.dll
-	usr/lib/kde4/plugins/designer/ksysguardlsofwidgets.dll
-	usr/lib/kde4/plugins/designer/ksysguardwidgets.dll
-	usr/share/dbus-1/interfaces/com.canonical.AppMenu.Registrar.xml
-	usr/share/dbus-1/interfaces/org.kde.kded.appmenu.xml
-	usr/share/dbus-1/interfaces/org.kde.khotkeys.xml
-	usr/share/dbus-1/interfaces/org.kde.krunner.App.xml
-	usr/share/dbus-1/interfaces/org.kde.KSMServerInterface.xml
-	usr/share/dbus-1/interfaces/org.kde.KWin.xml
 	usr/share/kde4/apps/cmake/
 "
-systemsettings_SUMMARY="KDE preferences GUI manager"
-systemsettings_CONTENTS="
-	usr/bin/systemsettings.exe
-	usr/lib/kde4/classic_mode.dll
-	usr/lib/kde4/icon_mode.dll
-	usr/share/applications/kde4/kdesystemsettings.desktop
-	usr/share/applications/kde4/systemsettings.desktop
-	usr/share/doc/HTML/en/systemsettings/
-	usr/share/kde4/apps/systemsettings/
-	usr/share/kde4/services/settings-*
-	usr/share/kde4/servicetypes/systemsettings*.desktop
-"
-# private libraries
-PKG_IGNORE="usr/lib/libkfontinst* usr/lib/libkhotkeysprivate.* usr/lib/libkickoff.*
-            usr/lib/liboxygen* usr/share/doc/HTML/en/kdm/"
 
 DIFF_EXCLUDES="symlinks"
 
@@ -416,9 +51,5 @@ src_install() {
 	cd ${B}
 	kde4_install
 
-	sed -e 's|${BIN_INSTALL_DIR}|/usr/bin|' ${S}/kdm/kfrontend/sessions/kde-plasma.desktop.cmake > kde-plasma.desktop
-	sed -e 's|${BIN_INSTALL_DIR}|/usr/bin|' ${S}/kdm/kfrontend/sessions/kde-plasma-safe.desktop.cmake > kde-plasma-safe.desktop
-
-	insinto /usr/share/xsessions
-	doins kde-plasma{,-safe}.desktop
+	rm -f ${D}/usr/bin/startkde
 }
